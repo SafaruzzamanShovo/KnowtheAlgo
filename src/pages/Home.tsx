@@ -8,11 +8,11 @@ import { supabase } from '../lib/supabase';
 import { CommunityPost } from '../types';
 
 const iconMap: Record<string, React.ReactNode> = {
-  Code2: <Code2 className="w-6 h-6" />,
-  Server: <Server className="w-6 h-6" />,
-  Globe: <Globe className="w-6 h-6" />,
-  Database: <Database className="w-6 h-6" />,
-  Cpu: <Cpu className="w-6 h-6" />,
+  Code2: <Code2 className="w-5 h-5" />,
+  Server: <Server className="w-5 h-5" />,
+  Globe: <Globe className="w-5 h-5" />,
+  Database: <Database className="w-5 h-5" />,
+  Cpu: <Cpu className="w-5 h-5" />,
 };
 
 export const Home = () => {
@@ -115,7 +115,7 @@ export const Home = () => {
                <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
              </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
               {subjects.map((subject, index) => (
                 <motion.div
                   key={subject.id}
@@ -128,30 +128,30 @@ export const Home = () => {
                     to={`/learn/${subject.id}`}
                     className="group block h-full relative"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[2rem] blur opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
-                    <div className="h-full bg-gray-50 dark:bg-gray-900/50 rounded-[2rem] p-8 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-all duration-300 relative flex flex-col overflow-hidden hover:-translate-y-1">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl blur opacity-0 group-hover:opacity-10 transition-opacity duration-500"></div>
+                    <div className="h-full bg-gray-50 dark:bg-gray-900/50 rounded-3xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 dark:hover:border-indigo-500/30 transition-all duration-300 relative flex flex-col overflow-hidden hover:-translate-y-1">
                       
                       <div className="relative z-10 flex-1">
-                        <div className="flex justify-between items-start mb-8">
-                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${subject.color} flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300`}>
-                            {iconMap[subject.icon] || <Code2 size={24} />}
+                        <div className="flex justify-between items-start mb-6">
+                          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${subject.color} flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300`}>
+                            {iconMap[subject.icon] || <Code2 size={20} />}
                           </div>
-                          <span className="px-3 py-1 rounded-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-xs font-bold uppercase tracking-wide text-gray-500">
+                          <span className="px-2.5 py-0.5 rounded-full bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 text-[10px] font-bold uppercase tracking-wide text-gray-500">
                             {subject.level}
                           </span>
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {subject.title}
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed line-clamp-3 text-sm">
+                        <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed line-clamp-3 text-sm">
                           {subject.description}
                         </p>
                       </div>
                       
-                      <div className="mt-auto pt-6 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                      <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between text-sm font-bold text-indigo-600 dark:text-indigo-400">
                         <span>Start Path</span>
-                        <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:translate-x-2 transition-transform">
-                          <ChevronRight size={16} />
+                        <div className="w-7 h-7 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center group-hover:translate-x-2 transition-transform">
+                          <ChevronRight size={14} />
                         </div>
                       </div>
                     </div>
