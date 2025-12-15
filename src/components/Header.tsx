@@ -18,8 +18,14 @@ export const Header = () => {
     
     // Check for admin session
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setIsAdmin(!!session);
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          // If token is invalid, ensure we are logged out locally
+          supabase.auth.signOut();
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!session);
+        }
       });
       
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

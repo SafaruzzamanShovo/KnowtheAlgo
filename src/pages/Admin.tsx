@@ -12,8 +12,6 @@ import { SiteEditor } from '../components/admin/SiteEditor';
 import { CategoryManager } from '../components/admin/CategoryManager';
 import { PortfolioManager } from '../components/admin/PortfolioManager';
 
-const ADMIN_EMAIL = "shovofec@gmail.com";
-
 export const Admin = () => {
   // Auth State
   const [session, setSession] = useState<any>(null);
@@ -38,8 +36,15 @@ export const Admin = () => {
   // Check Session on Mount
   useEffect(() => {
     if (supabase) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          // Clear invalid tokens to prevent loops
+          console.warn("Session error detected, signing out:", error.message);
+          supabase.auth.signOut();
+          setSession(null);
+        } else {
+          setSession(session);
+        }
         setAuthLoading(false);
       });
 
@@ -54,7 +59,7 @@ export const Admin = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'community' && session?.user?.email === ADMIN_EMAIL) {
+    if (activeTab === 'community' && session?.user?.email) {
       fetchPendingPosts();
     }
   }, [activeTab, session]);
@@ -64,12 +69,13 @@ export const Admin = () => {
     e.preventDefault();
     setAuthError(null);
     setLoading(true);
+    
     if (!supabase) {
-      if (email === ADMIN_EMAIL && password === 'admin123') setSession({ user: { email: ADMIN_EMAIL } });
-      else setAuthError("Simulation Mode: Use shovofec@gmail.com / admin123");
+      setAuthError("Supabase is not connected. Please connect your project.");
       setLoading(false);
       return;
     }
+
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setAuthError(error.message);
     setLoading(false);
@@ -79,10 +85,16 @@ export const Admin = () => {
     e.preventDefault();
     setAuthError(null);
     setLoading(true);
-    if (!supabase) { setAuthError("Cannot sign up in simulation mode."); setLoading(false); return; }
+    
+    if (!supabase) { 
+      setAuthError("Supabase is not connected."); 
+      setLoading(false); 
+      return; 
+    }
+
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) setAuthError(error.message);
-    else { setAuthMessage("Account created! Check email."); setAuthView('login'); }
+    else { setAuthMessage("Account created! You can now log in."); setAuthView('login'); }
     setLoading(false);
   };
 
@@ -90,7 +102,13 @@ export const Admin = () => {
     e.preventDefault();
     setAuthError(null);
     setLoading(true);
-    if (!supabase) { setAuthError("Cannot reset in simulation."); setLoading(false); return; }
+    
+    if (!supabase) { 
+      setAuthError("Supabase is not connected."); 
+      setLoading(false); 
+      return; 
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/admin' });
     if (error) setAuthError(error.message);
     else { setAuthMessage("Reset link sent!"); setAuthView('login'); }
@@ -225,8 +243,6 @@ export const Admin = () => {
       </div>
     );
   }
-
-  if (session.user.email !== ADMIN_EMAIL) return <div className="min-h-screen flex items-center justify-center">Access Denied</div>;
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950 py-12 pt-24">
