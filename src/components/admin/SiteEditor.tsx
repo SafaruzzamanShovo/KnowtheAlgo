@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Handshake, PenTool, Globe } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings } from '../../types';
 
@@ -141,7 +141,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
 
             <div className="border-t border-gray-200 dark:border-gray-800 pt-8 space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Handshake size={20} className="text-indigo-600" /> Collaboration Section
+                <Briefcase size={20} className="text-indigo-600" /> Collaboration Section
               </h3>
               <div className="grid gap-4">
                  <div>

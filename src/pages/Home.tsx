@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Code2, Server, Globe, Database, Cpu, ChevronRight, BookOpen, Users, MessageSquare, Sparkles, Handshake, Quote } from 'lucide-react';
+import { ArrowRight, Code2, Server, Globe, Database, Cpu, ChevronRight, BookOpen, Users, MessageSquare, Sparkles, Briefcase, Quote } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useSiteSettings } from '../hooks/useSiteSettings';
 import { supabase } from '../lib/supabase';
@@ -261,7 +261,7 @@ export const Home = () => {
 
               <div className="relative z-10">
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md text-white mb-8 border border-white/20 shadow-lg">
-                  <Handshake size={32} />
+                  <Briefcase size={32} />
                 </div>
                 <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tight">
                   {homeSettings.collab_title}
