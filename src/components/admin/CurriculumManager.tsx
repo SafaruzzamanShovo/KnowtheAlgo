@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Plus, Trash2, Edit2, ChevronRight, ChevronDown, 
-  Save, X, Layers, FileText, BookOpen, MoreVertical, FolderPlus 
+  Save, X, Layers, FileText, FolderPlus,
+  Bold, Italic, Heading1, Heading2, Code, Link as LinkIcon, Image as ImageIcon, MessageSquare,
+  Sparkles, Maximize2, Minimize2
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
-import { parseMarkdownToBlocks, blocksToMarkdown } from '../../lib/markdownParser';
+import { parseMarkdownToBlocks, blocksToMarkdown, blocksToHtml } from '../../lib/markdownParser';
+import { RichTextEditor } from '../RichTextEditor';
+import { cn } from '../../lib/utils';
 
 interface CurriculumManagerProps {
   subjects: Subject[];
@@ -19,7 +23,10 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   // Editing States
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [topicContent, setTopicContent] = useState('');
+  const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
   const [isSaving, setIsSaving] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // New Item States
   const [isAddingSubject, setIsAddingSubject] = useState(false);
@@ -88,7 +95,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       title: newItemTitle,
       module_id: moduleId,
       read_time: '5 min',
-      content: [] 
+      content: '' // Default to empty string for Rich Editor
     });
 
     if (!error) {
@@ -100,19 +107,43 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
   const handleEditTopic = (topic: Topic) => {
     setEditingTopic(topic);
-    setTopicContent(blocksToMarkdown(topic.content));
+    
+    // Check if content is Legacy Blocks (Array) or Rich Text (String)
+    if (Array.isArray(topic.content)) {
+      setEditorMode('markdown');
+      setTopicContent(blocksToMarkdown(topic.content));
+    } else {
+      setEditorMode('rich');
+      setTopicContent(topic.content || '');
+    }
+  };
+
+  const handleUpgradeToRich = () => {
+    if (confirm("Convert this topic to Rich Text? You won't be able to switch back to the Markdown block editor easily.")) {
+      // Parse current markdown to blocks, then to HTML
+      const blocks = parseMarkdownToBlocks(topicContent);
+      const html = blocksToHtml(blocks);
+      setTopicContent(html);
+      setEditorMode('rich');
+    }
   };
 
   const handleSaveTopic = async () => {
     if (!editingTopic || !supabase) return;
     setIsSaving(true);
 
-    const newBlocks = parseMarkdownToBlocks(topicContent);
+    let finalContent: any = topicContent;
+
+    // If in Markdown mode, parse back to blocks
+    if (editorMode === 'markdown') {
+      finalContent = parseMarkdownToBlocks(topicContent);
+    }
+    // If in Rich mode, save as HTML string (topicContent is already HTML)
 
     const { error } = await supabase
       .from('topics')
       .update({ 
-        content: newBlocks,
+        content: finalContent,
         read_time: `${Math.max(1, Math.ceil(topicContent.length / 500))} min`
       })
       .eq('id', editingTopic.id);
@@ -120,25 +151,83 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     setIsSaving(false);
     if (!error) {
       setEditingTopic(null);
+      setIsFullScreen(false);
       onRefresh();
     } else {
       alert('Failed to save topic');
     }
   };
 
+  // --- Editor Helpers (Markdown Mode) ---
+  const insertAtCursor = (before: string, after: string = '') => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
+    setTopicContent(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + before.length + selectedText.length + after.length;
+      const finalPos = selectedText.length > 0 ? newCursorPos : start + before.length;
+      textarea.setSelectionRange(finalPos, finalPos);
+    }, 0);
+  };
+
+  const ToolbarButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
+    <button 
+      onClick={onClick}
+      className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+      title={label}
+    >
+      <Icon size={16} />
+    </button>
+  );
+
   // --- Render ---
 
   if (editingTopic) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className={cn(
+        "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300",
+        isFullScreen ? "fixed inset-0 z-50 rounded-none h-screen w-screen p-6" : "p-6 h-[85vh]"
+      )}>
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Editing: {editingTopic.title}</h3>
-            <p className="text-sm text-gray-500">Write in Markdown. We'll format it automatically.</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              Editing: {editingTopic.title}
+              {isFullScreen && <span className="text-xs font-normal text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">Full Screen Mode</span>}
+            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${editorMode === 'rich' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}>
+                {editorMode === 'rich' ? 'Visual Editor' : 'Markdown Editor'}
+              </span>
+              {editorMode === 'markdown' && (
+                <button 
+                  onClick={handleUpgradeToRich}
+                  className="text-xs flex items-center gap-1 text-indigo-600 hover:underline"
+                  title="Convert to Visual Editor"
+                >
+                  <Sparkles size={12} /> Upgrade to Rich Text
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <button 
-              onClick={() => setEditingTopic(null)}
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+            >
+              {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+            <button 
+              onClick={() => { setEditingTopic(null); setIsFullScreen(false); }}
               className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg"
             >
               Cancel
@@ -146,18 +235,45 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
             <button 
               onClick={handleSaveTopic}
               disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-lg shadow-indigo-500/20"
             >
               <Save size={16} /> {isSaving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
-        <textarea
-          value={topicContent}
-          onChange={(e) => setTopicContent(e.target.value)}
-          className="w-full h-[60vh] p-4 font-mono text-sm bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-          placeholder="# Topic Title\n\nWrite your content here..."
-        />
+
+        {editorMode === 'rich' ? (
+          <div className="flex-1 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col shadow-inner bg-gray-50 dark:bg-gray-950/50">
+            <RichTextEditor 
+              content={topicContent} 
+              onChange={setTopicContent} 
+            />
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-inner">
+            {/* Markdown Toolbar */}
+            <div className="flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+              <ToolbarButton icon={Bold} label="Bold" onClick={() => insertAtCursor('**', '**')} />
+              <ToolbarButton icon={Italic} label="Italic" onClick={() => insertAtCursor('*', '*')} />
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+              <ToolbarButton icon={Heading1} label="Heading 1" onClick={() => insertAtCursor('# ')} />
+              <ToolbarButton icon={Heading2} label="Heading 2" onClick={() => insertAtCursor('## ')} />
+              <div className="w-px h-4 bg-gray-300 dark:bg-gray-700 mx-1"></div>
+              <ToolbarButton icon={Code} label="Code Block" onClick={() => insertAtCursor('```\n', '\n```')} />
+              <ToolbarButton icon={LinkIcon} label="Link" onClick={() => insertAtCursor('[', '](url)')} />
+              <ToolbarButton icon={ImageIcon} label="Image" onClick={() => insertAtCursor('![alt](', ')')} />
+              <ToolbarButton icon={MessageSquare} label="Note/Callout" onClick={() => insertAtCursor('> [!NOTE]\n> ')} />
+            </div>
+
+            <textarea
+              ref={textareaRef}
+              value={topicContent}
+              onChange={(e) => setTopicContent(e.target.value)}
+              className="w-full flex-1 p-4 font-mono text-sm bg-white dark:bg-gray-950 focus:outline-none resize-none leading-relaxed"
+              placeholder="# Topic Title\n\nWrite your content here..."
+            />
+          </div>
+        )}
       </div>
     );
   }

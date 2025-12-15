@@ -5,6 +5,7 @@ import { useCurriculum } from '../hooks/useCurriculum';
 import { CodeBlock } from '../components/CodeBlock';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import DOMPurify from 'dompurify';
 
 export const Documentation = () => {
   const { subjectId, topicId } = useParams();
@@ -71,6 +72,8 @@ export const Documentation = () => {
 
   // Loading state while redirecting
   if (!currentTopic && topicId) return null; 
+
+  const isRichContent = typeof currentTopic?.content === 'string';
 
   return (
     <div className="flex min-h-screen bg-white dark:bg-gray-950 pt-16">
@@ -199,31 +202,37 @@ export const Documentation = () => {
             </div>
 
             <div className="space-y-8">
-              {currentTopic?.content.map((block, idx) => {
-                if (block.type === 'heading') {
+              {isRichContent ? (
+                // Render HTML Content (Rich Editor)
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} />
+              ) : (
+                // Render Legacy Block Content (Markdown Editor)
+                (currentTopic?.content as any[])?.map((block, idx) => {
+                  if (block.type === 'heading') {
+                    return (
+                      <h2 key={idx} className="text-2xl font-bold text-gray-900 dark:text-white mt-12 mb-6 first:mt-0 scroll-mt-24 flex items-center gap-3" id={`heading-${idx}`}>
+                        <span className="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
+                        {block.value}
+                      </h2>
+                    );
+                  }
+                  if (block.type === 'code') {
+                    return <CodeBlock key={idx} code={block.value} language={block.language} />;
+                  }
+                  if (block.type === 'note') {
+                    return (
+                      <div key={idx} className="bg-amber-50 dark:bg-amber-900/10 border-l-4 border-amber-500 p-6 rounded-r-xl my-8">
+                        <p className="text-amber-900 dark:text-amber-100 font-medium m-0">{block.value}</p>
+                      </div>
+                    );
+                  }
                   return (
-                    <h2 key={idx} className="text-2xl font-bold text-gray-900 dark:text-white mt-12 mb-6 first:mt-0 scroll-mt-24 flex items-center gap-3" id={`heading-${idx}`}>
-                      <span className="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
+                    <p key={idx} className="text-gray-600 dark:text-gray-300 leading-8 text-lg">
                       {block.value}
-                    </h2>
+                    </p>
                   );
-                }
-                if (block.type === 'code') {
-                  return <CodeBlock key={idx} code={block.value} language={block.language} />;
-                }
-                if (block.type === 'note') {
-                  return (
-                    <div key={idx} className="bg-amber-50 dark:bg-amber-900/10 border-l-4 border-amber-500 p-6 rounded-r-xl my-8">
-                      <p className="text-amber-900 dark:text-amber-100 font-medium m-0">{block.value}</p>
-                    </div>
-                  );
-                }
-                return (
-                  <p key={idx} className="text-gray-600 dark:text-gray-300 leading-8 text-lg">
-                    {block.value}
-                  </p>
-                );
-              })}
+                })
+              )}
             </div>
           </article>
 
@@ -272,8 +281,9 @@ export const Documentation = () => {
           <div className="mb-8">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">On this page</h3>
             <ul className="space-y-3">
-              {currentTopic?.content
-                .filter(b => b.type === 'heading')
+              {/* Only show TOC for legacy block content for now, or implement HTML parsing for TOC */}
+              {!isRichContent && (currentTopic?.content as any[])
+                ?.filter(b => b.type === 'heading')
                 .map((h, idx) => (
                   <li key={idx}>
                     <a 
@@ -284,6 +294,7 @@ export const Documentation = () => {
                     </a>
                   </li>
                 ))}
+              {isRichContent && <p className="text-xs text-gray-400 italic">Table of contents not available for rich text yet.</p>}
             </ul>
           </div>
 

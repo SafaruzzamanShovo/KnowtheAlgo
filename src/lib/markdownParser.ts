@@ -82,7 +82,7 @@ export const parseMarkdownToBlocks = (markdown: string): ContentBlock[] => {
  * Converts structured ContentBlock[] back to markdown string for editing.
  */
 export const blocksToMarkdown = (blocks: ContentBlock[]): string => {
-  if (!blocks) return '';
+  if (!blocks || !Array.isArray(blocks)) return '';
   
   return blocks.map(block => {
     switch (block.type) {
@@ -96,4 +96,28 @@ export const blocksToMarkdown = (blocks: ContentBlock[]): string => {
         return `${block.value}\n`;
     }
   }).join('\n');
+};
+
+/**
+ * Converts structured ContentBlock[] to HTML string for the Rich Text Editor.
+ * This allows upgrading legacy content to the new editor.
+ */
+export const blocksToHtml = (blocks: ContentBlock[]): string => {
+  if (!blocks || !Array.isArray(blocks)) return '';
+
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'heading':
+        return `<h2>${block.value}</h2>`;
+      case 'code':
+        return `<pre><code class="language-${block.language || 'text'}">${block.value}</code></pre>`;
+      case 'note':
+        return `<blockquote>${block.value}</blockquote>`;
+      case 'image':
+        return `<img src="${block.value}" alt="Image" />`;
+      default:
+        // Wrap text in paragraphs if not already
+        return `<p>${block.value}</p>`;
+    }
+  }).join('');
 };

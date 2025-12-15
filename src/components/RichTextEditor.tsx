@@ -7,12 +7,23 @@ import TextAlign from '@tiptap/extension-text-align';
 import Image from '@tiptap/extension-image';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
+
+// FIX: Use named imports for these extensions to avoid "does not provide an export named 'default'" error
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TaskList } from '@tiptap/extension-task-list';
+import { TaskItem } from '@tiptap/extension-task-item';
+import { Highlight } from '@tiptap/extension-highlight';
+
 import { 
   Bold, Italic, Underline as UnderlineIcon, Strikethrough, 
   List, ListOrdered, Heading1, Heading2, Code, Quote, 
   Undo, Redo, Link as LinkIcon, Image as ImageIcon, 
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Minus, FileJson
+  Minus, FileJson, Table as TableIcon, CheckSquare, Highlighter,
+  Trash2, Columns, Rows
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -91,13 +102,11 @@ const MenuBar = ({ editor }: { editor: any }) => {
           json.cells.forEach((cell: any) => {
             if (cell.cell_type === 'markdown') {
               const text = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
-              // Simple markdown to HTML conversion (very basic)
               htmlContent += `<p>${text}</p>`; 
             } else if (cell.cell_type === 'code') {
               const code = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
               htmlContent += `<pre><code>${code}</code></pre>`;
               
-              // Handle outputs (images only for now)
               if (cell.outputs && Array.isArray(cell.outputs)) {
                 cell.outputs.forEach((output: any) => {
                   if (output.data && output.data['image/png']) {
@@ -137,6 +146,9 @@ const MenuBar = ({ editor }: { editor: any }) => {
       <MenuButton onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} title="Strikethrough">
         <Strikethrough size={16} />
       </MenuButton>
+      <MenuButton onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive('highlight')} title="Highlight">
+        <Highlighter size={16} />
+      </MenuButton>
       
       <Divider />
 
@@ -160,19 +172,43 @@ const MenuBar = ({ editor }: { editor: any }) => {
       <MenuButton onClick={() => editor.chain().focus().setTextAlign('right').run()} isActive={editor.isActive({ textAlign: 'right' })} title="Align Right">
         <AlignRight size={16} />
       </MenuButton>
-      <MenuButton onClick={() => editor.chain().focus().setTextAlign('justify').run()} isActive={editor.isActive({ textAlign: 'justify' })} title="Justify">
-        <AlignJustify size={16} />
-      </MenuButton>
 
       <Divider />
 
-      {/* Lists */}
+      {/* Lists & Tasks */}
       <MenuButton onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} title="Bullet List">
         <List size={16} />
       </MenuButton>
       <MenuButton onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} title="Ordered List">
         <ListOrdered size={16} />
       </MenuButton>
+      <MenuButton onClick={() => editor.chain().focus().toggleTaskList().run()} isActive={editor.isActive('taskList')} title="Task List">
+        <CheckSquare size={16} />
+      </MenuButton>
+
+      <Divider />
+
+      {/* Tables */}
+      <MenuButton 
+        onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()} 
+        title="Insert Table"
+      >
+        <TableIcon size={16} />
+      </MenuButton>
+      
+      {editor.isActive('table') && (
+        <>
+          <MenuButton onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add Column">
+            <Columns size={16} />
+          </MenuButton>
+          <MenuButton onClick={() => editor.chain().focus().addRowAfter().run()} title="Add Row">
+            <Rows size={16} />
+          </MenuButton>
+          <MenuButton onClick={() => editor.chain().focus().deleteTable().run()} title="Delete Table">
+            <Trash2 size={16} className="text-red-500" />
+          </MenuButton>
+        </>
+      )}
 
       <Divider />
 
@@ -237,6 +273,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChang
       Image.configure({ inline: true, allowBase64: true }),
       Subscript,
       Superscript,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Highlight,
     ],
     content: content,
     editorProps: {
