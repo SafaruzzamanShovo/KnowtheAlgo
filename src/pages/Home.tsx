@@ -10,6 +10,7 @@ import { HeroSection } from '../components/home/HeroSection';
 import { ValueProps } from '../components/home/ValueProps';
 import { LearningPaths } from '../components/home/LearningPaths';
 import { FeaturedContent } from '../components/home/FeaturedContent';
+import { CollaborationCTA } from '../components/home/CollaborationCTA';
 import { QuickNav } from '../components/home/QuickNav';
 
 export const Home = () => {
@@ -55,14 +56,14 @@ export const Home = () => {
       
       <LearningPaths subjects={subjects} loading={curriculumLoading} />
       
-      {/* TrustSignals Section Removed as requested */}
-      
       <FeaturedContent 
         post={latestPost} 
         loading={loadingPost}
         title={homeSettings.community_title}
         subtitle={homeSettings.community_desc}
       />
+
+      <CollaborationCTA settings={homeSettings} />
       
       <QuickNav />
 

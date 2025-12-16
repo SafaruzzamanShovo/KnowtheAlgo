@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X, Github, Linkedin, BookOpen, Mail } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { 
   HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings,
@@ -32,6 +32,9 @@ export const SiteEditor = ({
   const [footerData, setFooterData] = useState<FooterSettings>({ text: '', copyright: '' });
   const [valuePropsData, setValuePropsData] = useState<ValuePropItem[]>([]);
   const [quickNavData, setQuickNavData] = useState<QuickNavItem[]>([]);
+  
+  // AI Summary State
+  const [aiSummary, setAiSummary] = useState('');
 
   // Skill Input State
   const [newSkill, setNewSkill] = useState('');
@@ -54,6 +57,9 @@ export const SiteEditor = ({
 
         const qNav = data.find(s => s.key === 'home_quick_nav');
         if (qNav) setQuickNavData(qNav.value);
+
+        const summary = data.find(s => s.key === 'ai_portfolio_summary');
+        if (summary) setAiSummary(summary.value.text);
       }
     };
     fetchExtras();
@@ -78,6 +84,11 @@ export const SiteEditor = ({
         updates.push(supabase.from('site_settings').upsert({ key: 'home_quick_nav', value: quickNavData }));
       } else if (activeSection === 'about') {
         updates.push(supabase.from('site_settings').upsert({ key: 'about_profile', value: aboutData }));
+        // Save AI Summary
+        updates.push(supabase.from('site_settings').upsert({ 
+          key: 'ai_portfolio_summary', 
+          value: { text: aiSummary, updated_at: new Date().toISOString() } 
+        }));
       } else if (activeSection === 'community') {
         updates.push(supabase.from('site_settings').upsert({ key: 'community_page', value: communityData }));
       } else if (activeSection === 'contribute') {
@@ -498,7 +509,9 @@ export const SiteEditor = ({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                  <Mail size={16} /> Email
+                </label>
                 <input
                   type="text"
                   value={aboutData.socials?.email || ''}
@@ -506,6 +519,61 @@ export const SiteEditor = ({
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
                 />
               </div>
+            </div>
+
+            {/* Social Links */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Social Media Links</h3>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                      <Github size={14} /> GitHub
+                    </label>
+                    <input
+                      type="text"
+                      value={aboutData.socials?.github || ''}
+                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, github: e.target.value}})}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                      <Linkedin size={14} /> LinkedIn
+                    </label>
+                    <input
+                      type="text"
+                      value={aboutData.socials?.linkedin || ''}
+                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, linkedin: e.target.value}})}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                      <BookOpen size={14} /> Scholar
+                    </label>
+                    <input
+                      type="text"
+                      value={aboutData.socials?.scholar || ''}
+                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, scholar: e.target.value}})}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    />
+                  </div>
+               </div>
+            </div>
+
+            {/* AI Summary Editor */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">AI Profile Summary</h3>
+              <p className="text-sm text-gray-500 mb-4">
+                This summary appears at the top of your portfolio in "Recruiter Mode". You can manually edit it here.
+              </p>
+              <textarea
+                value={aiSummary}
+                onChange={e => setAiSummary(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm leading-relaxed"
+                placeholder="Generated summary will appear here..."
+              />
             </div>
 
             {/* Skills Manager */}
