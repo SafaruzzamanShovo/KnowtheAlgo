@@ -8,6 +8,9 @@ import remarkGfm from 'remark-gfm';
 import { CodeBlockEnhanced } from '../components/reading/CodeBlockEnhanced';
 import { ScrollProgress } from '../components/reading/ScrollProgress';
 import { ReadingToolbar } from '../components/reading/ReadingToolbar';
+import { Paragraph } from '../components/reading/Paragraph';
+import { SmartImage } from '../components/reading/SmartImage';
+import { SectionDivider } from '../components/reading/SectionDivider';
 import { ReadingPreferencesProvider, useReadingPreferences } from '../context/ReadingPreferences';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
@@ -51,20 +54,6 @@ const CommunityPostContent = () => {
   if (!post) return <div className="min-h-screen flex items-center justify-center text-xl">Post not found</div>;
 
   const isHtml = post.content.trim().startsWith('<');
-
-  // Typography Classes based on Context
-  const textSizeClass = {
-    sm: 'prose-sm',
-    base: 'prose-base',
-    lg: 'prose-lg',
-    xl: 'prose-xl'
-  }[fontSize];
-
-  const leadingClass = {
-    normal: 'leading-normal',
-    relaxed: 'leading-relaxed',
-    loose: 'leading-loose'
-  }[lineHeight];
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20 transition-colors duration-300">
@@ -113,10 +102,12 @@ const CommunityPostContent = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className={`prose prose-indigo dark:prose-invert max-w-none ${textSizeClass} ${leadingClass}`}
+            className="max-w-none"
           >
             {isHtml ? (
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+               <div className={`prose prose-indigo dark:prose-invert max-w-none prose-${fontSize} leading-${lineHeight}`}>
+                 <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
+               </div>
             ) : (
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
@@ -131,9 +122,12 @@ const CommunityPostContent = () => {
                       </code>
                     )
                   },
-                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-8 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2" {...props} />,
-                  blockquote: ({node, ...props}) => <div className="border-l-4 border-indigo-500 pl-4 py-2 my-4 bg-gray-50 dark:bg-gray-900/50 italic text-gray-600 dark:text-gray-300" {...props} />
+                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-12 mb-6" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-12 mb-6 border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-3" {...props}><span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>{props.children}</h2>,
+                  blockquote: ({node, ...props}) => <div className="border-l-4 border-indigo-500 pl-4 py-2 my-6 bg-gray-50 dark:bg-gray-900/50 italic text-gray-600 dark:text-gray-300 rounded-r-lg" {...props} />,
+                  p: ({node, ...props}) => <Paragraph {...props} />,
+                  img: ({node, ...props}) => <SmartImage src={props.src || ''} alt={props.alt || ''} caption={props.title} />,
+                  hr: ({node, ...props}) => <SectionDivider />
                 }}
               >
                 {post.content}

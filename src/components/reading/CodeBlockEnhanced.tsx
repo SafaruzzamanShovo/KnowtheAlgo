@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Check, Copy, Terminal, Maximize2, Minimize2 } from 'lucide-react';
+import { Check, Copy, Terminal, Maximize2, Minimize2, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CodeBlockProps {
   code: string;
   language?: string;
+  explanation?: string;
 }
 
-export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = 'text' }) => {
+export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = 'text', explanation }) => {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
@@ -24,7 +26,7 @@ export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = '
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
+      viewport={{ once: true, margin: "-10%" }}
       className="relative group my-8 rounded-xl overflow-hidden bg-[#0f1117] shadow-2xl border border-gray-800/50"
     >
       {/* Header */}
@@ -42,6 +44,23 @@ export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = '
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {explanation && (
+            <button
+              onClick={() => setShowExplanation(!showExplanation)}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-bold transition-colors ${
+                showExplanation 
+                  ? 'bg-indigo-500/20 text-indigo-300' 
+                  : 'text-gray-500 hover:text-indigo-300 hover:bg-gray-800'
+              }`}
+              title="Explain this code"
+            >
+              <Lightbulb size={12} />
+              {showExplanation ? 'Hide Info' : 'Explain'}
+            </button>
+          )}
+          
+          <div className="w-px h-4 bg-gray-800 mx-1"></div>
+
           {isLong && (
             <button
               onClick={() => setExpanded(!expanded)}
@@ -61,6 +80,23 @@ export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = '
           </button>
         </div>
       </div>
+
+      {/* Explanation Panel */}
+      <AnimatePresence>
+        {showExplanation && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="bg-indigo-900/20 border-b border-indigo-500/20 overflow-hidden"
+          >
+            <div className="p-4 text-sm text-indigo-200 leading-relaxed font-sans">
+              <strong className="text-indigo-400 block mb-1 text-xs uppercase tracking-wide">Code Explanation</strong>
+              {explanation}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Code Area */}
       <motion.div 

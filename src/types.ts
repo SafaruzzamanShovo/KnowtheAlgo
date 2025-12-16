@@ -1,7 +1,9 @@
 export interface ContentBlock {
-  type: 'text' | 'code' | 'heading' | 'image' | 'note';
+  type: 'text' | 'code' | 'heading' | 'image' | 'note' | 'divider';
   value: string;
   language?: string;
+  caption?: string; // For images
+  explanation?: string; // For code blocks
 }
 
 export interface Topic {
@@ -46,8 +48,8 @@ export interface CommunityPost {
   title: string;
   content: string;
   author_name: string;
-  author_email?: string; // Added
-  author_avatar?: string; // Added
+  author_email?: string;
+  author_avatar?: string;
   category: string;
   tags: string[];
   status: 'pending' | 'approved' | 'rejected';
@@ -107,8 +109,8 @@ export interface PortfolioItem {
   id: string;
   section: PortfolioSection;
   title: string;
-  subtitle?: string; // role, degree, category
-  organization?: string; // company, school, lab
+  subtitle?: string;
+  organization?: string;
   period?: string;
   description?: string;
   details: {
@@ -126,7 +128,7 @@ export interface PortfolioItem {
     icon?: string;
     color?: string;
     bg?: string;
-    image?: string; // Added for research/work logos
+    image?: string;
     imageGradient?: string;
   };
   display_order?: number;

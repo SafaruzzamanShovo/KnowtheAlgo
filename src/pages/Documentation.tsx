@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Menu, ArrowLeft, Clock, ChevronDown, ChevronUp, BookOpen, CheckCircle2, X } from 'lucide-react';
+import { ChevronRight, Menu, ArrowLeft, Clock, ChevronDown, ChevronUp, CheckCircle2, X } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { CodeBlockEnhanced } from '../components/reading/CodeBlockEnhanced';
 import { Callout } from '../components/reading/Callout';
 import { ScrollProgress } from '../components/reading/ScrollProgress';
 import { ReadingToolbar } from '../components/reading/ReadingToolbar';
 import { TableOfContents } from '../components/reading/TableOfContents';
+import { Paragraph } from '../components/reading/Paragraph';
+import { SmartImage } from '../components/reading/SmartImage';
+import { SectionDivider } from '../components/reading/SectionDivider';
+import { EndReader } from '../components/reading/EndReader';
 import { ReadingPreferencesProvider, useReadingPreferences } from '../context/ReadingPreferences';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +36,15 @@ const DocumentationContent = () => {
   const subject = subjects.find(s => s.id === subjectId);
   const currentModule = subject?.modules?.find(m => m.topics.some(t => t.id === topicId));
   const currentTopic = currentModule?.topics?.find(t => t.id === topicId);
+
+  // Find next topic for the "EndReader" component
+  const allTopics = subject?.modules.flatMap(m => m.topics) || [];
+  const currentIndex = allTopics.findIndex(t => t.id === topicId);
+  const nextTopic = currentIndex !== -1 && currentIndex < allTopics.length - 1 ? {
+    id: allTopics[currentIndex + 1].id,
+    title: allTopics[currentIndex + 1].title,
+    subjectId: subject?.id || ''
+  } : undefined;
 
   // Auto-open module
   useEffect(() => {
@@ -67,20 +80,6 @@ const DocumentationContent = () => {
   if (!currentTopic && topicId) return null;
 
   const isRichContent = typeof currentTopic?.content === 'string';
-
-  // Typography Classes based on Context
-  const textSizeClass = {
-    sm: 'prose-sm',
-    base: 'prose-base',
-    lg: 'prose-lg',
-    xl: 'prose-xl'
-  }[fontSize];
-
-  const leadingClass = {
-    normal: 'leading-normal',
-    relaxed: 'leading-relaxed',
-    loose: 'leading-loose'
-  }[lineHeight];
 
   return (
     <div className={`flex min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 ${focusMode ? 'pt-0' : 'pt-16'}`}>
@@ -200,7 +199,7 @@ const DocumentationContent = () => {
             <span className="font-medium text-indigo-600 dark:text-indigo-400">{currentTopic?.title}</span>
           </nav>
 
-          <article className={`prose prose-indigo dark:prose-invert max-w-none ${textSizeClass} ${leadingClass}`}>
+          <article className="max-w-none">
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -212,7 +211,7 @@ const DocumentationContent = () => {
                   {currentModule?.title}
                 </span>
               </div>
-              <h1 className="font-extrabold text-gray-900 dark:text-white mb-6 leading-tight">
+              <h1 className="font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
                 {currentTopic?.title}
               </h1>
               <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
@@ -223,43 +222,20 @@ const DocumentationContent = () => {
               </div>
             </motion.div>
 
-            <div className="space-y-8">
+            <div className="space-y-2">
               {isRichContent ? (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} 
-                />
+                 <div className={`prose prose-indigo dark:prose-invert max-w-none prose-${fontSize} leading-${lineHeight}`}>
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} />
+                 </div>
               ) : (
                 (currentTopic?.content as any[])?.map((block, idx) => (
                   <ContentBlockRenderer key={idx} block={block} index={idx} />
                 ))
               )}
             </div>
+            
+            <EndReader nextTopic={nextTopic} />
           </article>
-
-          {/* Navigation Footer */}
-          <div className="mt-20 pt-10 border-t border-gray-200 dark:border-gray-800 flex justify-between gap-4">
-            <NavButton 
-              direction="prev"
-              onClick={() => {
-                const allTopics = subject.modules.flatMap(m => m.topics);
-                const currentIndex = allTopics.findIndex(t => t.id === topicId);
-                if (currentIndex > 0) navigate(`/learn/${subject.id}/${allTopics[currentIndex - 1].id}`);
-              }}
-              disabled={subject.modules.flatMap(m => m.topics).findIndex(t => t.id === topicId) === 0}
-            />
-            <NavButton 
-              direction="next"
-              onClick={() => {
-                const allTopics = subject.modules.flatMap(m => m.topics);
-                const currentIndex = allTopics.findIndex(t => t.id === topicId);
-                if (currentIndex < allTopics.length - 1) navigate(`/learn/${subject.id}/${allTopics[currentIndex + 1].id}`);
-              }}
-              disabled={subject.modules.flatMap(m => m.topics).findIndex(t => t.id === topicId) === subject.modules.flatMap(m => m.topics).length - 1}
-            />
-          </div>
         </div>
 
         {/* Right Sidebar - TOC */}
@@ -274,49 +250,24 @@ const ContentBlockRenderer = ({ block, index }: { block: any, index: number }) =
     switch (block.type) {
       case 'heading':
         return (
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mt-12 mb-6 flex items-center gap-3 scroll-mt-24" id={`heading-${index}`}>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mt-16 mb-8 flex items-center gap-3 scroll-mt-24" id={`heading-${index}`}>
             <span className="w-1.5 h-8 bg-indigo-500 rounded-full"></span>
             {block.value}
           </h2>
         );
       case 'code':
-        return <CodeBlockEnhanced code={block.value} language={block.language} />;
+        return <CodeBlockEnhanced code={block.value} language={block.language} explanation={block.explanation} />;
       case 'note':
         return <Callout type="note">{block.value}</Callout>;
+      case 'image':
+        return <SmartImage src={block.value} alt="Topic Image" caption={block.caption} />;
+      case 'divider':
+        return <SectionDivider />;
       default:
-        return <p className="text-gray-600 dark:text-gray-300">{block.value}</p>;
+        // Text blocks are now Paragraphs
+        return <Paragraph id={`p-${index}`}>{block.value}</Paragraph>;
     }
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ delay: index * 0.05 }}
-    >
-      <Component />
-    </motion.div>
-  );
+  return <Component />;
 };
-
-const NavButton = ({ direction, onClick, disabled }: any) => (
-  <button 
-    onClick={onClick}
-    disabled={disabled}
-    className={`group flex-1 max-w-xs p-6 rounded-2xl border transition-all ${
-      disabled 
-        ? 'opacity-50 cursor-not-allowed border-gray-100 dark:border-gray-800' 
-        : 'border-gray-200 dark:border-gray-800 hover:border-indigo-500 dark:hover:border-indigo-500 hover:bg-gray-50 dark:hover:bg-gray-900'
-    }`}
-  >
-    <div className={`flex items-center text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ${!disabled && 'group-hover:text-indigo-600'} transition-colors ${direction === 'next' ? 'justify-end' : ''}`}>
-      {direction === 'prev' && <ArrowLeft size={14} className="mr-2" />}
-      {direction === 'prev' ? 'Previous' : 'Next'}
-      {direction === 'next' && <ChevronRight size={14} className="ml-2" />}
-    </div>
-    <div className={`font-bold text-gray-900 dark:text-white truncate ${direction === 'next' ? 'text-right' : 'text-left'}`}>
-      {direction === 'prev' ? 'Previous Topic' : 'Next Topic'}
-    </div>
-  </button>
-);
