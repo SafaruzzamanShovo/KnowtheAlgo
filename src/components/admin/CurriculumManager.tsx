@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
-import { parseMarkdownToBlocks } from '../../lib/markdownParser';
 import { DualModeEditor } from '../DualModeEditor';
 import { cn, slugify } from '../../lib/utils';
 import { Link } from 'react-router-dom';
@@ -34,6 +33,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const [addingTopicTo, setAddingTopicTo] = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
+  const [newItemIcon, setNewItemIcon] = useState('Code2'); // Default icon
 
   // Sort subjects by display_order
   const sortedSubjects = [...subjects].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
@@ -94,7 +94,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       id,
       title: newItemTitle,
       description: newItemDesc || 'New Subject Description',
-      icon: 'Code2',
+      icon: newItemIcon || 'Code2',
       color: 'from-gray-500 to-gray-700',
       level: 'Beginner',
       display_order: maxOrder + 1
@@ -103,6 +103,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     if (!error) {
       setNewItemTitle('');
       setNewItemDesc('');
+      setNewItemIcon('Code2');
       setIsAddingSubject(false);
       onRefresh();
     } else {
@@ -118,7 +119,8 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       .from('subjects')
       .update({ 
         title: editingSubject.title,
-        description: editingSubject.description 
+        description: editingSubject.description,
+        icon: editingSubject.icon
       })
       .eq('id', editingSubject.id);
 
@@ -161,7 +163,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
     const id = slugify(newItemTitle);
     // Find current max order in this module
-    // Need to find module first
     let maxOrder = 0;
     subjects.forEach(s => {
       const m = s.modules.find(mod => mod.id === moduleId);
@@ -203,7 +204,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     if (typeof finalContent === 'string') {
        readTime = `${Math.max(1, Math.ceil(finalContent.length / 500))} min`;
     } else if (Array.isArray(finalContent)) {
-       // Estimate read time for blocks
        const text = finalContent.map(b => b.value).join(' ');
        readTime = `${Math.max(1, Math.ceil(text.length / 500))} min`;
     }
@@ -301,6 +301,17 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
             value={newItemDesc}
             onChange={e => setNewItemDesc(e.target.value)}
           />
+          <div className="flex flex-col">
+            <label className="text-xs font-bold text-gray-500 mb-1">Icon (Lucide Name OR Emoji)</label>
+            <input 
+              type="text" 
+              placeholder="e.g., Code2, Database, 🐍, 🚀" 
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700"
+              value={newItemIcon}
+              onChange={e => setNewItemIcon(e.target.value)}
+            />
+            <p className="text-xs text-gray-400 mt-1">Use a Lucide icon name (e.g. "Server") or paste an emoji.</p>
+          </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setIsAddingSubject(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-200 rounded-lg">Cancel</button>
             <button onClick={handleAddSubject} className="px-4 py-2 bg-indigo-600 text-white rounded-lg">Create Subject</button>
@@ -329,6 +340,13 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                     onChange={e => setEditingSubject({...editingSubject, description: e.target.value})}
                     className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
                     placeholder="Description"
+                  />
+                  <input 
+                    type="text" 
+                    value={editingSubject.icon}
+                    onChange={e => setEditingSubject({...editingSubject, icon: e.target.value})}
+                    className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
+                    placeholder="Icon / Emoji"
                   />
                 </div>
                 <button 
@@ -369,7 +387,10 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}>
                   {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color}`}></div>
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color} flex items-center justify-center text-white font-bold`}>
+                    {/* Simple rendering for admin view */}
+                    {subject.icon && subject.icon.length < 5 ? subject.icon : <Layers size={16} />}
+                  </div>
                   <div>
                     <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                       {subject.title}

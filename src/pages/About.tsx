@@ -8,7 +8,6 @@ import { ProjectsGrid } from '../components/portfolio/ProjectsGrid';
 import { TimelineSection } from '../components/portfolio/TimelineSection';
 import { SkillsSection } from '../components/portfolio/SkillsSection';
 import { AchievementsSection } from '../components/portfolio/AchievementsSection';
-import { Footer } from '../components/Footer';
 import { RecruiterModeProvider, useRecruiterMode } from '../context/RecruiterModeContext';
 import { RecruiterToggle } from '../components/portfolio/RecruiterToggle';
 import { QuickScanHeader } from '../components/portfolio/QuickScanHeader';
@@ -24,9 +23,18 @@ export const About = () => (
 );
 
 const AboutContent = () => {
-  const { aboutSettings } = useSiteSettings();
-  const { items, getSection } = usePortfolio();
+  const { aboutSettings, loading: settingsLoading } = useSiteSettings();
+  const { items, getSection, loading: portfolioLoading } = usePortfolio();
   const { isRecruiterMode } = useRecruiterMode();
+
+  // Prevent flash of default content
+  if (settingsLoading || portfolioLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-950 flex items-center justify-center">
+        <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 font-sans selection:bg-indigo-500 selection:text-white">

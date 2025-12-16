@@ -9,6 +9,14 @@ interface HeroSectionProps {
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ settings }) => {
+  const scrollToCurriculum = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const element = document.getElementById('curriculum');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-20">
       {/* Dynamic Background */}
@@ -67,6 +75,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ settings }) => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <a 
               href="#curriculum"
+              onClick={scrollToCurriculum}
               className="group relative px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-300 flex items-center gap-2 overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
