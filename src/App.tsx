@@ -10,6 +10,7 @@ import { Admin } from './pages/Admin';
 import { Contribute } from './pages/Contribute';
 import { Community } from './pages/Community';
 import { CommunityPost } from './pages/CommunityPost';
+import { AllCourses } from './pages/AllCourses';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<Home />} />
             {/* Renamed URL from /about to /collaborate */}
             <Route path="/collaborate" element={<About />} />
+            <Route path="/courses" element={<AllCourses />} />
             <Route path="/learn/:subjectId" element={<Documentation />} />
             <Route path="/learn/:subjectId/:topicId" element={<Documentation />} />
             <Route path="/admin" element={<Admin />} />

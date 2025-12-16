@@ -40,23 +40,8 @@ export const Header = () => {
     }
   }, []);
 
-  const handleScrollToCurriculum = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (location.pathname !== '/') {
-      navigate('/#curriculum');
-      setTimeout(() => {
-        const element = document.getElementById('curriculum');
-        if (element) element.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      const element = document.getElementById('curriculum');
-      if (element) element.scrollIntoView({ behavior: 'smooth' });
-    }
-    setIsMenuOpen(false);
-  };
-
   const navLinks = [
-    { name: 'Learning Paths', action: handleScrollToCurriculum, path: '/#curriculum' },
+    { name: 'Learning Paths', path: '/courses' },
     { name: 'Community', path: '/community' },
     { name: "Let's Collaborate", path: '/collaborate' },
   ];
@@ -88,23 +73,9 @@ export const Header = () => {
         <nav className="hidden md:flex items-center gap-2">
           <div className="flex items-center p-1 rounded-full bg-gray-100/50 dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
             {navLinks.map((link) => {
-              const isActive = link.path === location.pathname || (link.name === 'Learning Paths' && location.hash === '#curriculum');
+              const isActive = link.path === location.pathname;
               
-              return link.action ? (
-                <a
-                  key={link.name}
-                  href={link.path}
-                  onClick={link.action}
-                  className={cn(
-                    "px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 relative",
-                    isActive 
-                      ? "text-indigo-600 dark:text-indigo-300 bg-white dark:bg-gray-800 shadow-sm" 
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-800/50"
-                  )}
-                >
-                  {link.name}
-                </a>
-              ) : (
+              return (
                 <Link 
                   key={link.name}
                   to={link.path}
@@ -163,23 +134,13 @@ export const Header = () => {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
               >
-                {link.action ? (
-                  <a 
-                    href={link.path}
-                    onClick={link.action}
-                    className="block text-3xl font-bold text-gray-900 dark:text-white py-4 border-b border-gray-100 dark:border-gray-800"
-                  >
-                    {link.name}
-                  </a>
-                ) : (
-                  <Link 
-                    to={link.path} 
-                    onClick={() => setIsMenuOpen(false)}
-                    className="block text-3xl font-bold text-gray-900 dark:text-white py-4 border-b border-gray-100 dark:border-gray-800"
-                  >
-                    {link.name}
-                  </Link>
-                )}
+                <Link 
+                  to={link.path} 
+                  onClick={() => setIsMenuOpen(false)}
+                  className="block text-3xl font-bold text-gray-900 dark:text-white py-4 border-b border-gray-100 dark:border-gray-800"
+                >
+                  {link.name}
+                </Link>
               </motion.div>
             ))}
              {isAdmin && (
