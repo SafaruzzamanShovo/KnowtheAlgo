@@ -2,16 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CommunityPost as ICommunityPost } from '../types';
-import { ArrowLeft, User, Calendar, Mail } from 'lucide-react';
+import { ArrowLeft, User, Mail, MessageSquare, ThumbsUp, Share2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { CodeBlock } from '../components/CodeBlock';
+import { CodeBlockEnhanced } from '../components/reading/CodeBlockEnhanced';
+import { ScrollProgress } from '../components/reading/ScrollProgress';
+import { ReadingToolbar } from '../components/reading/ReadingToolbar';
+import { ReadingPreferencesProvider, useReadingPreferences } from '../context/ReadingPreferences';
+import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 
-export const CommunityPost = () => {
+export const CommunityPost = () => (
+  <ReadingPreferencesProvider>
+    <CommunityPostContent />
+  </ReadingPreferencesProvider>
+);
+
+const CommunityPostContent = () => {
   const { postId } = useParams();
   const [post, setPost] = useState<ICommunityPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const { fontSize, lineHeight } = useReadingPreferences();
 
   useEffect(() => {
     if (postId) fetchPost(postId);
@@ -41,15 +52,36 @@ export const CommunityPost = () => {
 
   const isHtml = post.content.trim().startsWith('<');
 
+  // Typography Classes based on Context
+  const textSizeClass = {
+    sm: 'prose-sm',
+    base: 'prose-base',
+    lg: 'prose-lg',
+    xl: 'prose-xl'
+  }[fontSize];
+
+  const leadingClass = {
+    normal: 'leading-normal',
+    relaxed: 'leading-relaxed',
+    loose: 'leading-loose'
+  }[lineHeight];
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20">
+    <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20 transition-colors duration-300">
+      <ScrollProgress />
+      <ReadingToolbar />
+
       <div className="container mx-auto px-4 max-w-3xl">
         <Link to="/community" className="inline-flex items-center text-gray-500 hover:text-indigo-600 mb-8 transition-colors">
           <ArrowLeft size={16} className="mr-2" /> Back to Community
         </Link>
 
         <article>
-          <header className="mb-10 text-center">
+          <motion.header 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-10 text-center"
+          >
             <div className="flex items-center justify-center gap-2 mb-6">
               <span className="px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-sm font-bold uppercase tracking-wide">
                 {post.category}
@@ -74,16 +106,15 @@ export const CommunityPost = () => {
                     <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleDateString()}</div>
                   </div>
                </div>
-
-               {post.author_email && (
-                 <a href={`mailto:${post.author_email}`} className="p-2 bg-gray-100 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 hover:text-indigo-600 transition-colors" title="Contact Author">
-                   <Mail size={18} />
-                 </a>
-               )}
             </div>
-          </header>
+          </motion.header>
 
-          <div className="prose prose-lg prose-indigo dark:prose-invert max-w-none">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className={`prose prose-indigo dark:prose-invert max-w-none ${textSizeClass} ${leadingClass}`}
+          >
             {isHtml ? (
               <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
             ) : (
@@ -93,28 +124,53 @@ export const CommunityPost = () => {
                   code({node, inline, className, children, ...props}: any) {
                     const match = /language-(\w+)/.exec(className || '')
                     return !inline && match ? (
-                      <CodeBlock code={String(children).replace(/\n$/, '')} language={match[1]} />
+                      <CodeBlockEnhanced code={String(children).replace(/\n$/, '')} language={match[1]} />
                     ) : (
                       <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-sm font-mono text-indigo-600 dark:text-indigo-400" {...props}>
                         {children}
                       </code>
                     )
-                  }
+                  },
+                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-8 mb-4 border-b border-gray-100 dark:border-gray-800 pb-2" {...props} />,
+                  blockquote: ({node, ...props}) => <div className="border-l-4 border-indigo-500 pl-4 py-2 my-4 bg-gray-50 dark:bg-gray-900/50 italic text-gray-600 dark:text-gray-300" {...props} />
                 }}
               >
                 {post.content}
               </ReactMarkdown>
             )}
-          </div>
+          </motion.div>
 
           <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {post.tags.map(tag => (
-                <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm">
-                  #{tag}
-                </span>
-              ))}
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map(tag => (
+                  <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-4">
+                 <button className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors">
+                   <ThumbsUp size={18} /> <span className="text-sm font-bold">Like</span>
+                 </button>
+                 <button className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors">
+                   <Share2 size={18} /> <span className="text-sm font-bold">Share</span>
+                 </button>
+              </div>
+            </div>
+            
+            {/* Mock Comments Section */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <MessageSquare size={18} /> Discussion
+              </h3>
+              <div className="text-center py-8 text-gray-500">
+                <p>No comments yet. Be the first to start the conversation!</p>
+                <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700">
+                  Post a Comment
+                </button>
+              </div>
             </div>
           </div>
         </article>
