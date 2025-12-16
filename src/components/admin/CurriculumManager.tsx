@@ -1,15 +1,15 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, Trash2, Edit2, ChevronRight, ChevronDown, 
   Save, X, Layers, FileText, FolderPlus,
-  Bold, Italic, Heading1, Heading2, Code, Link as LinkIcon, Image as ImageIcon, MessageSquare,
-  Sparkles, Maximize2, Minimize2
+  Maximize2, Minimize2, ArrowUp, ArrowDown, ExternalLink
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
-import { parseMarkdownToBlocks, blocksToMarkdown, blocksToHtml } from '../../lib/markdownParser';
-import { RichTextEditor } from '../RichTextEditor';
+import { parseMarkdownToBlocks } from '../../lib/markdownParser';
+import { DualModeEditor } from '../DualModeEditor';
 import { cn, slugify } from '../../lib/utils';
+import { Link } from 'react-router-dom';
 
 interface CurriculumManagerProps {
   subjects: Subject[];
@@ -22,11 +22,9 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   
   // Editing States
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
-  const [topicContent, setTopicContent] = useState('');
-  const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
+  const [topicContent, setTopicContent] = useState<string | any[]>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // New Item States
   const [isAddingSubject, setIsAddingSubject] = useState(false);
@@ -34,6 +32,9 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const [addingTopicTo, setAddingTopicTo] = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemDesc, setNewItemDesc] = useState('');
+
+  // Sort subjects by display_order
+  const sortedSubjects = [...subjects].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
   // --- Actions ---
 
@@ -50,10 +51,43 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     }
   };
 
+  const handleMove = async (
+    table: 'subjects' | 'modules' | 'topics', 
+    items: any[], 
+    index: number, 
+    direction: 'up' | 'down'
+  ) => {
+    if (!supabase) return;
+    
+    const newItems = [...items].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+
+    // Re-assign order based on new array position
+    // Swap in array first
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+
+    // Update DB with new indices
+    const updates = newItems.map((item, idx) => ({
+      id: item.id,
+      display_order: idx + 1
+    }));
+
+    for (const update of updates) {
+      await supabase.from(table).update({ display_order: update.display_order }).eq('id', update.id);
+    }
+
+    onRefresh();
+  };
+
   const handleAddSubject = async () => {
     if (!newItemTitle.trim() || !supabase) return;
     
     const id = slugify(newItemTitle);
+    const maxOrder = Math.max(...subjects.map(s => s.display_order || 0), 0);
     
     const { error } = await supabase.from('subjects').insert({
       id,
@@ -61,7 +95,8 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       description: newItemDesc || 'New Subject Description',
       icon: 'Code2',
       color: 'from-gray-500 to-gray-700',
-      level: 'Beginner'
+      level: 'Beginner',
+      display_order: maxOrder + 1
     });
 
     if (!error) {
@@ -78,12 +113,15 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     if (!newItemTitle.trim() || !supabase) return;
     
     const id = slugify(newItemTitle);
+    const subject = subjects.find(s => s.id === subjectId);
+    const maxOrder = Math.max(...(subject?.modules.map(m => m.display_order || 0) || []), 0);
     
     const { error } = await supabase.from('modules').insert({
       id,
       title: newItemTitle,
       subject_id: subjectId,
-      description: 'New module'
+      description: 'New module',
+      display_order: maxOrder + 1
     });
 
     if (!error) {
@@ -99,13 +137,23 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     if (!newItemTitle.trim() || !supabase) return;
 
     const id = slugify(newItemTitle);
-    
+    // Find current max order in this module
+    // Need to find module first
+    let maxOrder = 0;
+    subjects.forEach(s => {
+      const m = s.modules.find(mod => mod.id === moduleId);
+      if (m) {
+        maxOrder = Math.max(...m.topics.map(t => t.display_order || 0), 0);
+      }
+    });
+
     const { error } = await supabase.from('topics').insert({
       id,
       title: newItemTitle,
       module_id: moduleId,
       read_time: '5 min',
-      content: '' // Default to empty string for Rich Editor
+      content: '',
+      display_order: maxOrder + 1
     });
 
     if (!error) {
@@ -119,44 +167,29 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
   const handleEditTopic = (topic: Topic) => {
     setEditingTopic(topic);
-    
-    // Check if content is Legacy Blocks (Array) or Rich Text (String)
-    if (Array.isArray(topic.content)) {
-      setEditorMode('markdown');
-      setTopicContent(blocksToMarkdown(topic.content));
-    } else {
-      setEditorMode('rich');
-      setTopicContent(typeof topic.content === 'string' ? topic.content : '');
-    }
-  };
-
-  const handleUpgradeToRich = () => {
-    if (confirm("Convert this topic to Rich Text? You won't be able to switch back to the Markdown block editor easily.")) {
-      // Parse current markdown to blocks, then to HTML
-      const blocks = parseMarkdownToBlocks(topicContent);
-      const html = blocksToHtml(blocks);
-      setTopicContent(html);
-      setEditorMode('rich');
-    }
+    setTopicContent(topic.content);
   };
 
   const handleSaveTopic = async () => {
     if (!editingTopic || !supabase) return;
     setIsSaving(true);
 
-    let finalContent: any = topicContent;
+    let finalContent = topicContent;
+    let readTime = '5 min';
 
-    // If in Markdown mode, parse back to blocks
-    if (editorMode === 'markdown') {
-      finalContent = parseMarkdownToBlocks(topicContent);
+    if (typeof finalContent === 'string') {
+       readTime = `${Math.max(1, Math.ceil(finalContent.length / 500))} min`;
+    } else if (Array.isArray(finalContent)) {
+       // Estimate read time for blocks
+       const text = finalContent.map(b => b.value).join(' ');
+       readTime = `${Math.max(1, Math.ceil(text.length / 500))} min`;
     }
-    // If in Rich mode, save as HTML string (topicContent is already HTML)
 
     const { error } = await supabase
       .from('topics')
       .update({ 
         content: finalContent,
-        read_time: `${Math.max(1, Math.ceil(topicContent.length / 500))} min`
+        read_time: readTime
       })
       .eq('id', editingTopic.id);
 
@@ -170,37 +203,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     }
   };
 
-  // --- Editor Helpers (Markdown Mode) ---
-  const insertAtCursor = (before: string, after: string = '') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const text = textarea.value;
-    const selectedText = text.substring(start, end);
-    
-    const newText = text.substring(0, start) + before + selectedText + after + text.substring(end);
-    setTopicContent(newText);
-
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + before.length + selectedText.length + after.length;
-      const finalPos = selectedText.length > 0 ? newCursorPos : start + before.length;
-      textarea.setSelectionRange(finalPos, finalPos);
-    }, 0);
-  };
-
-  const ToolbarButton = ({ icon: Icon, label, onClick }: { icon: any, label: string, onClick: () => void }) => (
-    <button 
-      onClick={onClick}
-      className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-      title={label}
-    >
-      <Icon size={16} />
-    </button>
-  );
-
   // --- Render ---
 
   if (editingTopic) {
@@ -213,22 +215,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
           <div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               Editing: {editingTopic.title}
-              {isFullScreen && <span className="text-xs font-normal text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">Full Screen Mode</span>}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${editorMode === 'rich' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}>
-                {editorMode === 'rich' ? 'Visual Editor' : 'Markdown Editor'}
-              </span>
-              {editorMode === 'markdown' && (
-                <button 
-                  onClick={handleUpgradeToRich}
-                  className="text-xs flex items-center gap-1 text-indigo-600 hover:underline"
-                  title="Convert to Visual Editor"
-                >
-                  <Sparkles size={12} /> Upgrade to Rich Text
-                </button>
-              )}
-            </div>
           </div>
           <div className="flex gap-2">
             <button 
@@ -254,38 +241,12 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
           </div>
         </div>
 
-        {editorMode === 'rich' ? (
-          <div className="flex-1 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col shadow-inner bg-gray-50 dark:bg-gray-950/50">
-            <RichTextEditor 
-              content={topicContent} 
-              onChange={setTopicContent} 
-            />
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-inner">
-            {/* Markdown Toolbar */}
-            <div className="flex items-center gap-1 p-2 bg-gray-50 dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
-              <ToolbarButton icon={Bold} label="Bold" onClick={() => insertAtCursor('**', '**')} />
-              <ToolbarButton icon={Italic} label="Italic" onClick={() => insertAtCursor('*', '*')} />
-              <div className="w-px h-4 bg-gray-300 dark:bg-gray-700 mx-1"></div>
-              <ToolbarButton icon={Heading1} label="Heading 1" onClick={() => insertAtCursor('# ')} />
-              <ToolbarButton icon={Heading2} label="Heading 2" onClick={() => insertAtCursor('## ')} />
-              <div className="w-px h-4 bg-gray-300 dark:bg-gray-700 mx-1"></div>
-              <ToolbarButton icon={Code} label="Code Block" onClick={() => insertAtCursor('```\n', '\n```')} />
-              <ToolbarButton icon={LinkIcon} label="Link" onClick={() => insertAtCursor('[', '](url)')} />
-              <ToolbarButton icon={ImageIcon} label="Image" onClick={() => insertAtCursor('![alt](', ')')} />
-              <ToolbarButton icon={MessageSquare} label="Note/Callout" onClick={() => insertAtCursor('> [!NOTE]\n> ')} />
-            </div>
-
-            <textarea
-              ref={textareaRef}
-              value={topicContent}
-              onChange={(e) => setTopicContent(e.target.value)}
-              className="w-full flex-1 p-4 font-mono text-sm bg-white dark:bg-gray-950 focus:outline-none resize-none leading-relaxed"
-              placeholder="# Topic Title\n\nWrite your content here..."
-            />
-          </div>
-        )}
+        <div className="flex-1 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col shadow-inner bg-gray-50 dark:bg-gray-950/50">
+          <DualModeEditor 
+            content={topicContent} 
+            onChange={setTopicContent} 
+          />
+        </div>
       </div>
     );
   }
@@ -324,18 +285,38 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
         </div>
       )}
 
-      {subjects.map((subject) => (
+      {sortedSubjects.map((subject, sIdx) => (
         <div key={subject.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden">
           
           {/* Subject Header */}
           <div className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-900/50">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}>
-              {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color}`}></div>
-              <span className="font-bold text-gray-900 dark:text-white">{subject.title}</span>
-              <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
-                {subject.modules.length} Modules
-              </span>
+            <div className="flex items-center gap-3">
+               {/* Reorder Controls */}
+               <div className="flex flex-col gap-0.5">
+                  <button 
+                    onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'up')}
+                    disabled={sIdx === 0}
+                    className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                  >
+                    <ArrowUp size={14} />
+                  </button>
+                  <button 
+                    onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'down')}
+                    disabled={sIdx === sortedSubjects.length - 1}
+                    className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                  >
+                    <ArrowDown size={14} />
+                  </button>
+               </div>
+
+               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}>
+                {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color}`}></div>
+                <span className="font-bold text-gray-900 dark:text-white">{subject.title}</span>
+                <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
+                  {subject.modules.length} Modules
+                </span>
+               </div>
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -377,13 +358,36 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                 <div className="p-8 text-center text-gray-400 text-sm">No modules yet. Click + to add one.</div>
               )}
 
-              {subject.modules.map(module => (
+              {subject.modules
+                .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+                .map((module, mIdx, sortedModules) => (
                 <div key={module.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                  <div className="flex items-center justify-between p-3 pl-10 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedModule(expandedModule === module.id ? null : module.id)}>
-                      <Layers size={14} className="text-gray-400" />
-                      <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{module.title}</span>
+                  <div className="flex items-center justify-between p-3 pl-4 hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <div className="flex items-center gap-3">
+                      {/* Module Reorder */}
+                      <div className="flex flex-col gap-0.5">
+                        <button 
+                          onClick={() => handleMove('modules', sortedModules, mIdx, 'up')}
+                          disabled={mIdx === 0}
+                          className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button 
+                          onClick={() => handleMove('modules', sortedModules, mIdx, 'down')}
+                          disabled={mIdx === sortedModules.length - 1}
+                          className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedModule(expandedModule === module.id ? null : module.id)}>
+                        <Layers size={14} className="text-gray-400" />
+                        <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{module.title}</span>
+                      </div>
                     </div>
+
                     <div className="flex items-center gap-1">
                       <button 
                         onClick={() => setAddingTopicTo(module.id)}
@@ -420,18 +424,46 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                         </div>
                       )}
 
-                      {module.topics.map(topic => (
+                      {module.topics
+                        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+                        .map((topic, tIdx, sortedTopics) => (
                         <div key={topic.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white dark:hover:bg-gray-900 border border-transparent hover:border-gray-200 dark:hover:border-gray-800 group transition-all">
                           <div className="flex items-center gap-2">
+                             {/* Topic Reorder */}
+                             <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                  onClick={() => handleMove('topics', sortedTopics, tIdx, 'up')}
+                                  disabled={tIdx === 0}
+                                  className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                                >
+                                  <ArrowUp size={10} />
+                                </button>
+                                <button 
+                                  onClick={() => handleMove('topics', sortedTopics, tIdx, 'down')}
+                                  disabled={tIdx === sortedTopics.length - 1}
+                                  className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                                >
+                                  <ArrowDown size={10} />
+                                </button>
+                             </div>
+
                             <FileText size={12} className="text-gray-400" />
                             <span className="text-sm text-gray-600 dark:text-gray-400">{topic.title}</span>
                           </div>
                           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link 
+                              to={`/learn/${subject.id}/${topic.id}`}
+                              target="_blank"
+                              className="text-gray-400 hover:text-indigo-600 p-1"
+                              title="View Live"
+                            >
+                              <ExternalLink size={12} />
+                            </Link>
                             <button 
                               onClick={() => handleEditTopic(topic)}
                               className="text-xs font-medium text-indigo-600 hover:underline flex items-center gap-1"
                             >
-                              <Edit2 size={10} /> Edit Content
+                              <Edit2 size={10} /> Edit
                             </button>
                             <div className="w-px h-3 bg-gray-300 dark:bg-gray-700"></div>
                             <button 

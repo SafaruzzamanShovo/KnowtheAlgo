@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Save, AlertCircle, CheckCircle, XCircle, Clock, Database, UploadCloud, RefreshCw, Lock, LogOut, Mail, Key, Layout, Users, BookOpen, Briefcase } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, XCircle, Clock, Database, UploadCloud, RefreshCw, Lock, LogOut, Mail, Key, Layout, Users, BookOpen, Briefcase, BarChart3 } from 'lucide-react';
 import { supabase, isSupabaseConnected } from '../lib/supabase';
-import { CommunityPost } from '../types';
 import { subjects as initialMockData, defaultCategories } from '../data/mockData';
 import { portfolioMockItems } from '../data/portfolioMockData';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { useSiteSettings } from '../hooks/useSiteSettings';
 import { usePortfolio } from '../hooks/usePortfolio';
+import { useCommunityPosts } from '../hooks/useCommunityPosts';
 import { CurriculumManager } from '../components/admin/CurriculumManager';
 import { SiteEditor } from '../components/admin/SiteEditor';
 import { CategoryManager } from '../components/admin/CategoryManager';
 import { PortfolioManager } from '../components/admin/PortfolioManager';
+import { CommunityManager } from '../components/admin/CommunityManager';
+import { DashboardOverview } from '../components/admin/DashboardOverview';
 
 export const Admin = () => {
   // Auth State
@@ -23,22 +25,20 @@ export const Admin = () => {
   const [authMessage, setAuthMessage] = useState<string | null>(null);
 
   // Dashboard State
-  const [activeTab, setActiveTab] = useState<'pages' | 'portfolio' | 'community' | 'curriculum'>('pages');
-  const [pendingPosts, setPendingPosts] = useState<CommunityPost[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'pages' | 'portfolio' | 'community' | 'curriculum'>('overview');
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
   // Hooks
   const { subjects: dbSubjects, refresh: refreshCurriculum } = useCurriculum();
   const { homeSettings, aboutSettings, communitySettings, contributeSettings, categories, refresh: refreshSettings } = useSiteSettings();
   const { items: portfolioItems, refresh: refreshPortfolio } = usePortfolio();
+  const { posts: communityPosts, refresh: refreshCommunity } = useCommunityPosts();
 
   // Check Session on Mount
   useEffect(() => {
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session }, error }) => {
         if (error) {
-          // Clear invalid tokens to prevent loops
           console.warn("Session error detected, signing out:", error.message);
           supabase.auth.signOut();
           setSession(null);
@@ -58,89 +58,49 @@ export const Admin = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'community' && session?.user?.email) {
-      fetchPendingPosts();
-    }
-  }, [activeTab, session]);
-
   // --- Auth Handlers (Login/Signup/Forgot) ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    setLoading(true);
     
     if (!supabase) {
       setAuthError("Supabase is not connected. Please connect your project.");
-      setLoading(false);
       return;
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) setAuthError(error.message);
-    setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    setLoading(true);
     
     if (!supabase) { 
       setAuthError("Supabase is not connected."); 
-      setLoading(false); 
       return; 
     }
 
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) setAuthError(error.message);
     else { setAuthMessage("Account created! You can now log in."); setAuthView('login'); }
-    setLoading(false);
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
-    setLoading(true);
     
     if (!supabase) { 
       setAuthError("Supabase is not connected."); 
-      setLoading(false); 
       return; 
     }
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/admin' });
     if (error) setAuthError(error.message);
     else { setAuthMessage("Reset link sent!"); setAuthView('login'); }
-    setLoading(false);
   };
 
   const handleLogout = async () => { if (supabase) await supabase.auth.signOut(); setSession(null); };
-
-  // --- Community Handlers ---
-  const fetchPendingPosts = async () => {
-    if (!supabase) return;
-    const { data } = await supabase.from('community_posts').select('*').eq('status', 'pending');
-    if (data) setPendingPosts(data);
-  };
-
-  const handleApprove = async (id: string) => {
-    if (!supabase) return;
-    const { error } = await supabase.from('community_posts').update({ status: 'approved' }).eq('id', id);
-    if (!error) {
-      setPendingPosts(prev => prev.filter(p => p.id !== id));
-      setNotification({ type: 'success', message: 'Post approved!' });
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    if (!supabase) return;
-    const { error } = await supabase.from('community_posts').update({ status: 'rejected' }).eq('id', id);
-    if (!error) {
-      setPendingPosts(prev => prev.filter(p => p.id !== id));
-      setNotification({ type: 'success', message: 'Post rejected.' });
-    }
-  };
 
   // --- Seeding Handler ---
   const handleSeedDatabase = async () => {
@@ -149,7 +109,7 @@ export const Admin = () => {
       return;
     }
     if (!confirm("This will overwrite existing data with the default curriculum, categories, and portfolio items. Continue?")) return;
-    setLoading(true);
+    
     try {
       // 1. Upload Subjects
       for (const sub of initialMockData) {
@@ -199,8 +159,23 @@ export const Admin = () => {
     } catch (err) {
       console.error(err);
       setNotification({ type: 'error', message: 'Failed to seed database.' });
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  // Calculate Stats
+  const stats = {
+    posts: {
+      total: communityPosts.length,
+      pending: communityPosts.filter(p => p.status === 'pending').length,
+      approved: communityPosts.filter(p => p.status === 'approved').length
+    },
+    curriculum: {
+      subjects: dbSubjects.length,
+      modules: dbSubjects.reduce((acc, s) => acc + s.modules.length, 0),
+      topics: dbSubjects.reduce((acc, s) => acc + s.modules.reduce((mAcc, m) => mAcc + m.topics.length, 0), 0)
+    },
+    portfolio: {
+      total: portfolioItems.length
     }
   };
 
@@ -231,8 +206,8 @@ export const Admin = () => {
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800" required />
               </div>
             )}
-            <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">
-              {loading ? 'Loading...' : authView === 'login' ? 'Login' : authView === 'signup' ? 'Sign Up' : 'Send Reset Link'}
+            <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">
+              {authView === 'login' ? 'Login' : authView === 'signup' ? 'Sign Up' : 'Send Reset Link'}
             </button>
           </form>
           <div className="mt-6 text-center text-sm">
@@ -254,6 +229,9 @@ export const Admin = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex bg-white dark:bg-gray-900 rounded-lg p-1 border border-gray-200 dark:border-gray-800 overflow-x-auto">
+              <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 whitespace-nowrap ${activeTab === 'overview' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'}`}>
+                <BarChart3 size={16} /> Overview
+              </button>
               <button onClick={() => setActiveTab('pages')} className={`px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 whitespace-nowrap ${activeTab === 'pages' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-gray-600 dark:text-gray-400'}`}>
                 <Layout size={16} /> Site Editor
               </button>
@@ -272,6 +250,11 @@ export const Admin = () => {
         </div>
 
         {notification && <div className="mb-6 p-4 rounded-lg bg-green-50 text-green-700 border border-green-200 flex items-center gap-2"><CheckCircle size={18} /> {notification.message}</div>}
+
+        {/* TAB 0: OVERVIEW */}
+        {activeTab === 'overview' && (
+          <DashboardOverview stats={stats} onChangeTab={(tab) => setActiveTab(tab as any)} />
+        )}
 
         {/* TAB 1: SITE EDITOR */}
         {activeTab === 'pages' && (
@@ -310,26 +293,9 @@ export const Admin = () => {
               <CategoryManager categories={categories} onRefresh={refreshSettings} />
             </div>
             
-            <div>
-              <h3 className="text-xl font-bold mb-4">Pending Approvals</h3>
-              {pendingPosts.length === 0 ? (
-                <div className="text-center py-8 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-500">No pending posts.</div>
-              ) : (
-                <div className="space-y-4">
-                  {pendingPosts.map(post => (
-                    <div key={post.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center">
-                      <div>
-                        <h4 className="font-bold">{post.title}</h4>
-                        <p className="text-sm text-gray-500">By {post.author_name} • {post.category}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleApprove(post.id)} className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm">Approve</button>
-                        <button onClick={() => handleReject(post.id)} className="px-3 py-1 bg-red-100 text-red-700 rounded-lg text-sm">Reject</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+              <h3 className="text-xl font-bold mb-6">Manage Posts</h3>
+              <CommunityManager posts={communityPosts} onRefresh={refreshCommunity} />
             </div>
           </div>
         )}

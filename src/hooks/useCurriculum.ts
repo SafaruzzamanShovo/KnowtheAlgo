@@ -15,10 +15,11 @@ export const useCurriculum = () => {
         return;
       }
 
-      // 1. Fetch Subjects
+      // 1. Fetch Subjects (ordered)
       const { data: subjectsData, error: subjectsError } = await supabase
         .from('subjects')
-        .select('*');
+        .select('*')
+        .order('display_order', { ascending: true });
 
       if (subjectsError) throw subjectsError;
 
@@ -28,17 +29,19 @@ export const useCurriculum = () => {
         return;
       }
 
-      // 2. Fetch Modules
+      // 2. Fetch Modules (ordered)
       const { data: modulesData, error: modulesError } = await supabase
         .from('modules')
-        .select('*');
+        .select('*')
+        .order('display_order', { ascending: true });
 
       if (modulesError) throw modulesError;
 
-      // 3. Fetch Topics
+      // 3. Fetch Topics (ordered)
       const { data: topicsData, error: topicsError } = await supabase
         .from('topics')
-        .select('*');
+        .select('*')
+        .order('display_order', { ascending: true });
 
       if (topicsError) throw topicsError;
 

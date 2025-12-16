@@ -28,6 +28,7 @@ export const Community = () => {
           .select('*')
           .eq('status', 'approved')
           .eq('category', category)
+          .order('display_order', { ascending: true }) // Respect custom order
           .order('created_at', { ascending: false });
         
         if (error) throw error;

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, User, Users, ExternalLink, FileText, CheckCircle2 } from 'lucide-react';
 import { PortfolioItem } from '../../types';
 import { useRecruiterMode } from '../../context/RecruiterModeContext';
+import DOMPurify from 'dompurify';
 
 interface ResearchSectionProps {
   items: PortfolioItem[];
@@ -105,18 +106,14 @@ export const ResearchSection: React.FC<ResearchSectionProps> = ({ items }) => {
                       <ul className="space-y-2 mb-6">
                         <li className="flex gap-2 text-gray-700 dark:text-gray-300">
                           <CheckCircle2 size={16} className="text-indigo-500 flex-shrink-0 mt-1" />
-                          <span className="text-sm">{item.description}</span>
-                        </li>
-                        {/* Mock bullet points for demo since data is single string */}
-                        <li className="flex gap-2 text-gray-700 dark:text-gray-300">
-                          <CheckCircle2 size={16} className="text-indigo-500 flex-shrink-0 mt-1" />
-                          <span className="text-sm">Achieved significant performance improvements in distributed environments.</span>
+                          <div className="text-sm prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description || '') }} />
                         </li>
                       </ul>
                     ) : (
-                      <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 text-lg">
-                        {item.description}
-                      </p>
+                      <div 
+                        className="text-gray-600 dark:text-gray-300 leading-relaxed mb-6 text-lg prose dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description || '') }}
+                      />
                     )}
 
                     <div className="flex flex-wrap gap-2 mb-6">

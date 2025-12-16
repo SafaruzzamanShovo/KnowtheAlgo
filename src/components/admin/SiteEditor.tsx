@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings } from '../../types';
+import { DualModeEditor } from '../DualModeEditor';
 
 interface SiteEditorProps {
   initialHome: HomeSettings;
@@ -137,11 +138,10 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                  <textarea
-                    value={homeData.community_desc || ''}
-                    onChange={e => setHomeData({...homeData, community_desc: e.target.value})}
-                    rows={2}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  <DualModeEditor
+                    content={homeData.community_desc || ''}
+                    onChange={val => setHomeData({...homeData, community_desc: typeof val === 'string' ? val : ''})}
+                    minHeight="150px"
                   />
                 </div>
               </div>
@@ -163,11 +163,10 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                  <textarea
-                    value={homeData.collab_desc || ''}
-                    onChange={e => setHomeData({...homeData, collab_desc: e.target.value})}
-                    rows={2}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  <DualModeEditor
+                    content={homeData.collab_desc || ''}
+                    onChange={val => setHomeData({...homeData, collab_desc: typeof val === 'string' ? val : ''})}
+                    minHeight="150px"
                   />
                 </div>
               </div>
@@ -200,11 +199,10 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio</label>
-              <textarea
-                value={aboutData.bio}
-                onChange={e => setAboutData({...aboutData, bio: e.target.value})}
-                rows={4}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              <DualModeEditor
+                content={aboutData.bio}
+                onChange={val => setAboutData({...aboutData, bio: typeof val === 'string' ? val : ''})}
+                minHeight="200px"
               />
             </div>
             <div>
@@ -257,11 +255,10 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subtitle / Description</label>
-              <textarea
-                value={communityData.subtitle}
-                onChange={e => setCommunityData({...communityData, subtitle: e.target.value})}
-                rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              <DualModeEditor
+                content={communityData.subtitle}
+                onChange={val => setCommunityData({...communityData, subtitle: typeof val === 'string' ? val : ''})}
+                minHeight="150px"
               />
             </div>
           </div>
@@ -281,11 +278,10 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subtitle / Description</label>
-              <textarea
-                value={contributeData.subtitle}
-                onChange={e => setContributeData({...contributeData, subtitle: e.target.value})}
-                rows={3}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              <DualModeEditor
+                content={contributeData.subtitle}
+                onChange={val => setContributeData({...contributeData, subtitle: typeof val === 'string' ? val : ''})}
+                minHeight="150px"
               />
             </div>
           </div>

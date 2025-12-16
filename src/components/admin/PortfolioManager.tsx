@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, ArrowUp, ArrowDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PortfolioItem, PortfolioSection } from '../../types';
 import { generateId } from '../../lib/utils';
+import { DualModeEditor } from '../DualModeEditor';
 
 interface PortfolioManagerProps {
   items: PortfolioItem[];
@@ -24,11 +25,21 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
   const [editingItem, setEditingItem] = useState<Partial<PortfolioItem> | null>(null);
   const [isAdding, setIsAdding] = useState(false);
 
-  const filteredItems = items.filter(i => i.section === activeSection);
+  // Sort items by display_order
+  const filteredItems = items
+    .filter(i => i.section === activeSection)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
 
   const handleSave = async () => {
     if (!supabase || !editingItem) return;
     
+    // Determine order if new
+    let order = editingItem.display_order;
+    if (order === undefined) {
+      const maxOrder = Math.max(...filteredItems.map(i => i.display_order || 0), 0);
+      order = maxOrder + 1;
+    }
+
     const payload = {
       section: activeSection,
       title: editingItem.title || 'Untitled',
@@ -36,7 +47,8 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
       organization: editingItem.organization || '',
       period: editingItem.period || '',
       description: editingItem.description || '',
-      details: editingItem.details || {}
+      details: editingItem.details || {},
+      display_order: order
     };
 
     let error;
@@ -44,7 +56,6 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
       const res = await supabase.from('portfolio_items').update(payload).eq('id', editingItem.id);
       error = res.error;
     } else {
-      // Generate a new UUID for the item
       const res = await supabase.from('portfolio_items').insert([{
         ...payload,
         id: generateId()
@@ -71,6 +82,58 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
     }
   };
 
+  const handleMove = async (index: number, direction: 'up' | 'down') => {
+    if (!supabase) return;
+    
+    const newItems = [...filteredItems];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+
+    // Swap items in array
+    const temp = newItems[index];
+    newItems[index] = newItems[targetIndex];
+    newItems[targetIndex] = temp;
+
+    // Optimistic UI update (optional, but we'll rely on refresh for simplicity)
+    
+    // Update DB
+    const itemA = newItems[index];
+    const itemB = newItems[targetIndex];
+
+    // Swap their display_orders
+    const orderA = itemA.display_order || 0;
+    const orderB = itemB.display_order || 0;
+
+    // We actually want to swap the order values based on their NEW positions
+    // But simplest way is to just swap the values of the two items involved
+    // Wait, if we swap positions, we swap their order values.
+    
+    // Let's just swap the display_order values of the two items
+    const { error: err1 } = await supabase
+      .from('portfolio_items')
+      .update({ display_order: newItems[targetIndex].display_order }) // Give A's order to B (which is now at A's old spot)
+      .eq('id', itemA.id); // Wait, logic is tricky.
+
+    // Correct Logic:
+    // Item moving UP (index -> index-1)
+    // Item at index gets order of item at index-1
+    // Item at index-1 gets order of item at index
+    
+    // Let's just re-assign order based on array index to be safe and robust
+    // This handles gaps too.
+    const updates = newItems.map((item, idx) => ({
+      id: item.id,
+      display_order: idx + 1
+    }));
+
+    for (const update of updates) {
+      await supabase.from('portfolio_items').update({ display_order: update.display_order }).eq('id', update.id);
+    }
+
+    onRefresh();
+  };
+
   const startEdit = (item: PortfolioItem) => {
     setEditingItem(item);
     setIsAdding(true);
@@ -79,7 +142,8 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
   const startAdd = () => {
     setEditingItem({
       section: activeSection,
-      details: {}
+      details: {},
+      display_order: filteredItems.length + 1
     });
     setIsAdding(true);
   };
@@ -163,10 +227,10 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
 
             <div className="mb-4">
               <label className="block text-xs font-bold text-gray-500 mb-1">Description</label>
-              <textarea 
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 h-24"
-                value={editingItem.description || ''}
-                onChange={e => setEditingItem({...editingItem, description: e.target.value})}
+              <DualModeEditor 
+                content={editingItem.description || ''}
+                onChange={val => setEditingItem({...editingItem, description: typeof val === 'string' ? val : ''})}
+                minHeight="200px"
               />
             </div>
 
@@ -333,12 +397,30 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
         ) : (
           <div className="space-y-3">
             {filteredItems.length === 0 && <div className="text-gray-500 text-center py-10">No items in this section yet.</div>}
-            {filteredItems.map(item => (
+            {filteredItems.map((item, index) => (
               <div key={item.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-xl flex justify-between items-start group hover:shadow-md transition-all">
-                <div>
-                  <h4 className="font-bold text-gray-900 dark:text-white">{item.title}</h4>
-                  <p className="text-sm text-gray-500">{item.subtitle} {item.organization && `• ${item.organization}`}</p>
-                  {item.period && <p className="text-xs text-gray-400 mt-1">{item.period}</p>}
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-1">
+                    <button 
+                      onClick={() => handleMove(index, 'up')}
+                      disabled={index === 0}
+                      className="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-gray-400"
+                    >
+                      <ArrowUp size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleMove(index, 'down')}
+                      disabled={index === filteredItems.length - 1}
+                      className="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:hover:text-gray-400"
+                    >
+                      <ArrowDown size={16} />
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white">{item.title}</h4>
+                    <p className="text-sm text-gray-500">{item.subtitle} {item.organization && `• ${item.organization}`}</p>
+                    {item.period && <p className="text-xs text-gray-400 mt-1">{item.period}</p>}
+                  </div>
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => startEdit(item)} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"><Edit2 size={16} /></button>

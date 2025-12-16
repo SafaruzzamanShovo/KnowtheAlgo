@@ -10,14 +10,18 @@ export interface Topic {
   id: string;
   title: string;
   readTime?: string;
-  content: ContentBlock[];
+  content: ContentBlock[] | string; // Can be legacy blocks or HTML string
+  module_id?: string;
+  display_order?: number;
 }
 
 export interface Module {
   id: string;
   title: string;
   description?: string;
+  subject_id?: string;
   topics: Topic[];
+  display_order?: number;
 }
 
 export interface Subject {
@@ -28,6 +32,7 @@ export interface Subject {
   color: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';
   modules: Module[];
+  display_order?: number;
 }
 
 export interface Author {

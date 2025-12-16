@@ -3,7 +3,7 @@ import { Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useSiteSettings } from '../hooks/useSiteSettings';
-import { RichTextEditor } from '../components/RichTextEditor';
+import { DualModeEditor } from '../components/DualModeEditor';
 
 export const Contribute = () => {
   const { contributeSettings } = useSiteSettings();
@@ -180,9 +180,10 @@ export const Contribute = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Content
               </label>
-              <RichTextEditor 
+              <DualModeEditor 
                 content={formData.content} 
-                onChange={(html) => setFormData({...formData, content: html})} 
+                onChange={(html) => setFormData({...formData, content: typeof html === 'string' ? html : ''})} 
+                minHeight="300px"
               />
               <p className="mt-2 text-xs text-gray-500">
                 You can drag & drop images or import .ipynb files using the toolbar.
