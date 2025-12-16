@@ -302,15 +302,17 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
             onChange={e => setNewItemDesc(e.target.value)}
           />
           <div className="flex flex-col">
-            <label className="text-xs font-bold text-gray-500 mb-1">Icon (Lucide Name OR Emoji)</label>
+            <label className="text-xs font-bold text-gray-500 mb-1">Icon (Lucide Name)</label>
             <input 
               type="text" 
-              placeholder="e.g., Code2, Database, 🐍, 🚀" 
+              placeholder="e.g., Code2, Database, Server, Globe" 
               className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700"
               value={newItemIcon}
               onChange={e => setNewItemIcon(e.target.value)}
             />
-            <p className="text-xs text-gray-400 mt-1">Use a Lucide icon name (e.g. "Server") or paste an emoji.</p>
+            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
+              Please use a valid Lucide icon name (e.g. "Code2", "Server", "Database") instead of emojis for better consistency.
+            </p>
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setIsAddingSubject(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-200 rounded-lg">Cancel</button>
@@ -346,7 +348,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                     value={editingSubject.icon}
                     onChange={e => setEditingSubject({...editingSubject, icon: e.target.value})}
                     className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
-                    placeholder="Icon / Emoji"
+                    placeholder="Icon Name (e.g. Code2)"
                   />
                 </div>
                 <button 
@@ -389,7 +391,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                   {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                   <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color} flex items-center justify-center text-white font-bold`}>
                     {/* Simple rendering for admin view */}
-                    {subject.icon && subject.icon.length < 5 ? subject.icon : <Layers size={16} />}
+                    {subject.icon && subject.icon.length < 10 ? subject.icon : <Layers size={16} />}
                   </div>
                   <div>
                     <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">

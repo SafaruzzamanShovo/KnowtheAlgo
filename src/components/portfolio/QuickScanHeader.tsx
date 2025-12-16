@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Download, BrainCircuit } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { AboutSettings, PortfolioItem } from '../../types';
 import { generateCV } from '../../utils/pdfGenerator';
 
@@ -12,23 +12,11 @@ interface QuickScanHeaderProps {
 export const QuickScanHeader: React.FC<QuickScanHeaderProps> = ({ settings }) => {
   const coreSkills = settings.skills.slice(0, 5);
 
-  const handleDownloadCV = () => {
-    // We pass empty items array since generateCV might rely on it, 
-    // but here we just trigger the function. 
-    // Ideally generateCV should handle it or we pass the real items if needed.
-    // For now, let's assume the parent handles the data or we just pass empty to satisfy TS if needed.
-    // Actually, generateCV needs items. Let's assume we pass them through props if we wanted to be strict,
-    // but for this specific component update, we just want to trigger the action.
-    // The prop 'items' is passed to QuickScanHeader, so we can use it.
-    // Wait, I need to make sure I use 'items' in the function call.
-    // The component definition above receives 'items'.
-  };
-
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-16 z-30 shadow-sm/50 backdrop-blur-md bg-white/90 dark:bg-gray-900/90"
+      className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-[72px] z-30 shadow-sm/50 backdrop-blur-md bg-white/90 dark:bg-gray-900/90"
     >
       <div className="container mx-auto px-6 py-4">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -60,7 +48,7 @@ export const QuickScanHeader: React.FC<QuickScanHeaderProps> = ({ settings }) =>
             </div>
             
             <button 
-              onClick={() => generateCV(settings, [] as any)} // Passing empty items as we just want the header mainly or refactor generateCV
+              onClick={() => generateCV(settings, [] as any)} 
               className="flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white hover:bg-gray-800 dark:hover:bg-gray-100 text-white dark:text-gray-900 rounded-lg text-xs font-bold transition-all shadow-md hover:shadow-lg whitespace-nowrap"
             >
               <Download size={14} /> Download Resume

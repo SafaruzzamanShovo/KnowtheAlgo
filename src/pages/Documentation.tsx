@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, Menu, ArrowLeft, Clock, ChevronDown, ChevronUp, CheckCircle2, X } from 'lucide-react';
+import { ChevronRight, Menu, ArrowLeft, Clock, ChevronDown, ChevronUp, CheckCircle2, X, User, Mail } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 import { CodeBlockEnhanced } from '../components/reading/CodeBlockEnhanced';
 import { Callout } from '../components/reading/Callout';
 import { ScrollProgress } from '../components/reading/ScrollProgress';
@@ -33,6 +34,8 @@ const DocumentationContent = () => {
   const { fontSize, lineHeight, focusMode } = useReadingPreferences();
 
   const { subjects, loading } = useCurriculum();
+  const { aboutSettings } = useSiteSettings(); // Fetch admin/author info
+
   const subject = subjects.find(s => s.id === subjectId);
   const currentModule = subject?.modules?.find(m => m.topics.some(t => t.id === topicId));
   const currentTopic = currentModule?.topics?.find(t => t.id === topicId);
@@ -214,8 +217,28 @@ const DocumentationContent = () => {
               <h1 className="font-extrabold text-4xl md:text-5xl text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
                 {currentTopic?.title}
               </h1>
-              <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
-                <div className="flex items-center gap-2">
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                {/* Author Info (Admin) */}
+                <div className="flex items-center gap-3">
+                  {aboutSettings.image ? (
+                    <img src={aboutSettings.image} alt={aboutSettings.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100 dark:ring-gray-800" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500">
+                      <User size={14} />
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white leading-none mb-0.5">{aboutSettings.name}</span>
+                    {aboutSettings.socials?.email && (
+                      <a href={aboutSettings.socials.email} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                        <Mail size={10} /> {aboutSettings.socials.email.replace('mailto:', '')}
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-500 font-medium bg-gray-50 dark:bg-gray-900 px-3 py-1.5 rounded-full">
                   <Clock size={16} className="text-indigo-500" />
                   <span>{currentTopic?.readTime || "5 min"} read</span>
                 </div>

@@ -76,23 +76,37 @@ const CommunityPostContent = () => {
                 {post.category}
               </span>
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-8 leading-tight">
               {post.title}
             </h1>
             
             {/* Author Info */}
-            <div className="flex items-center justify-center gap-6">
-               <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 px-4 py-2 rounded-full border border-gray-100 dark:border-gray-800">
+            <div className="flex items-center justify-center">
+               <div className="flex items-center gap-4 bg-gray-50 dark:bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                   {post.author_avatar ? (
-                    <img src={post.author_avatar} alt={post.author_name} className="w-8 h-8 rounded-full object-cover" />
+                    <img src={post.author_avatar} alt={post.author_name} className="w-10 h-10 rounded-full object-cover ring-2 ring-white dark:ring-gray-800" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                      <User size={16} />
+                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-indigo-600 dark:text-indigo-400 ring-2 ring-white dark:ring-gray-800">
+                      <User size={18} />
                     </div>
                   )}
                   <div className="text-left">
-                    <div className="text-sm font-bold text-gray-900 dark:text-white leading-none">{post.author_name}</div>
-                    <div className="text-xs text-gray-500">{new Date(post.created_at).toLocaleDateString()}</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white leading-tight mb-0.5">{post.author_name}</div>
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span>{new Date(post.created_at).toLocaleDateString()}</span>
+                      {post.author_email && (
+                        <>
+                          <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-700"></span>
+                          <a 
+                            href={`mailto:${post.author_email}`}
+                            className="flex items-center gap-1 hover:text-indigo-600 transition-colors"
+                          >
+                            <Mail size={10} />
+                            {post.author_email}
+                          </a>
+                        </>
+                      )}
+                    </div>
                   </div>
                </div>
             </div>

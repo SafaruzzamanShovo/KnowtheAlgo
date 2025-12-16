@@ -53,7 +53,7 @@ const AboutContent = () => {
       <CVTemplate settings={aboutSettings} items={items} />
 
       {isRecruiterMode ? (
-        <>
+        <div className="pt-20"> {/* Added padding top for fixed header clearance */}
           <QuickScanHeader settings={aboutSettings} items={items} />
           <AISummarySection settings={aboutSettings} items={items} />
           <main className="space-y-4">
@@ -70,7 +70,7 @@ const AboutContent = () => {
               leadership={getSection('leadership')} 
             />
           </main>
-        </>
+        </div>
       ) : (
         <>
           <PortfolioNav />
