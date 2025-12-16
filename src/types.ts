@@ -106,6 +106,31 @@ export interface ContributePageSettings {
   subtitle: string;
 }
 
+// New Global Settings
+export interface BrandingSettings {
+  siteName: string;
+  logoText: string;
+}
+
+export interface FooterSettings {
+  text: string;
+  copyright: string;
+}
+
+export interface ValuePropItem {
+  icon: string;
+  title: string;
+  desc: string;
+}
+
+export interface QuickNavItem {
+  icon: string;
+  title: string;
+  desc: string;
+  link: string;
+  color: string;
+}
+
 // --- Portfolio Types ---
 
 export type PortfolioSection = 'news' | 'research' | 'project' | 'experience' | 'education' | 'honor' | 'leadership';

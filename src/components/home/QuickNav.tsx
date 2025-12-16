@@ -1,33 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Code2, MessageSquare, PenTool, ArrowUpRight } from 'lucide-react';
-
-const navItems = [
-  {
-    icon: Code2,
-    title: "Browse All Courses",
-    desc: "Explore Full Curriculum",
-    link: "/courses",
-    color: "bg-blue-500"
-  },
-  {
-    icon: MessageSquare,
-    title: "Join Community",
-    desc: "Read Discussions",
-    link: "/community",
-    color: "bg-purple-500"
-  },
-  {
-    icon: PenTool,
-    title: "Let's Collaborate",
-    desc: "Work Together",
-    link: "/collaborate",
-    color: "bg-rose-500"
-  }
-];
+import { ArrowUpRight } from 'lucide-react';
+import { useSiteSettings } from '../../hooks/useSiteSettings';
+import { DynamicIcon } from '../DynamicIcon';
 
 export const QuickNav = () => {
+  const { quickNav } = useSiteSettings();
+
   return (
     <section className="py-24 bg-white dark:bg-gray-950 border-t border-gray-100 dark:border-gray-900">
       <div className="container mx-auto px-4">
@@ -37,7 +17,7 @@ export const QuickNav = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {navItems.map((item, idx) => (
+          {quickNav.map((item, idx) => (
             <motion.div
               key={idx}
               initial={{ opacity: 0, y: 20 }}
@@ -56,11 +36,11 @@ export const QuickNav = () => {
   );
 };
 
-const NavCardContent = ({ item }: { item: typeof navItems[0] }) => (
+const NavCardContent = ({ item }: { item: any }) => (
   <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden h-full flex flex-col">
     <div className="flex justify-between items-start mb-4">
       <div className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center text-white shadow-md group-hover:scale-110 transition-transform`}>
-        <item.icon size={24} />
+        <DynamicIcon name={item.icon} size={24} />
       </div>
       <ArrowUpRight size={20} className="text-gray-300 group-hover:text-indigo-500 transition-colors" />
     </div>

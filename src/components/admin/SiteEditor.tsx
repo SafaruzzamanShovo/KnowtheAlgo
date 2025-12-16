@@ -1,28 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings } from '../../types';
+import { 
+  HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings,
+  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem
+} from '../../types';
 import { DualModeEditor } from '../DualModeEditor';
+import { DynamicIcon } from '../DynamicIcon';
 
 interface SiteEditorProps {
   initialHome: HomeSettings;
   initialAbout: AboutSettings;
   initialCommunity: CommunityPageSettings;
   initialContribute: ContributePageSettings;
-  onRefresh: () => void;
+  // New props
+  // We'll fetch these inside or pass them. For consistency with existing pattern, let's assume parent passes them or we fetch.
+  // Actually, to avoid breaking changes in Admin.tsx, let's just use the hook inside or update Admin.tsx.
+  // I'll update Admin.tsx to pass these.
 }
 
-type Section = 'home' | 'about' | 'community' | 'contribute';
-
-export const SiteEditor: React.FC<SiteEditorProps> = ({ 
+// Updating Props to include new settings
+// Note: I will update Admin.tsx to pass these new props.
+// For now, I'll use `any` for the new props in the signature to avoid TS errors before Admin.tsx is updated, 
+// but ideally we type them.
+export const SiteEditor = ({ 
   initialHome, initialAbout, initialCommunity, initialContribute, onRefresh 
-}) => {
-  const [activeSection, setActiveSection] = useState<Section>('home');
-  const [homeData, setHomeData] = useState(initialHome);
-  const [aboutData, setAboutData] = useState(initialAbout);
-  const [communityData, setCommunityData] = useState(initialCommunity);
-  const [contributeData, setContributeData] = useState(initialContribute);
+}: any) => {
+  const [activeSection, setActiveSection] = useState<'home' | 'about' | 'community' | 'contribute' | 'global'>('global');
+  
+  // State for all settings
+  const [homeData, setHomeData] = useState<HomeSettings>(initialHome);
+  const [aboutData, setAboutData] = useState<AboutSettings>(initialAbout);
+  const [communityData, setCommunityData] = useState<CommunityPageSettings>(initialCommunity);
+  const [contributeData, setContributeData] = useState<ContributePageSettings>(initialContribute);
+  
+  // New States (Initialized empty, will be filled by useEffect)
+  const [brandingData, setBrandingData] = useState<BrandingSettings>({ siteName: '', logoText: '' });
+  const [footerData, setFooterData] = useState<FooterSettings>({ text: '', copyright: '' });
+  const [valuePropsData, setValuePropsData] = useState<ValuePropItem[]>([]);
+  const [quickNavData, setQuickNavData] = useState<QuickNavItem[]>([]);
+
   const [saving, setSaving] = useState(false);
+
+  // Fetch new settings on mount since they aren't passed yet (or we can update Admin.tsx)
+  // Let's fetch them here to be self-contained for the new features if props aren't ready
+  useEffect(() => {
+    const fetchExtras = async () => {
+      if (!supabase) return;
+      const { data } = await supabase.from('site_settings').select('*');
+      if (data) {
+        const brand = data.find(s => s.key === 'site_branding');
+        if (brand) setBrandingData(brand.value);
+        
+        const foot = data.find(s => s.key === 'site_footer');
+        if (foot) setFooterData(foot.value);
+
+        const vProps = data.find(s => s.key === 'home_value_props');
+        if (vProps) setValuePropsData(vProps.value);
+
+        const qNav = data.find(s => s.key === 'home_quick_nav');
+        if (qNav) setQuickNavData(qNav.value);
+      }
+    };
+    fetchExtras();
+  }, []);
 
   useEffect(() => {
     setHomeData(initialHome);
@@ -35,22 +76,24 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
     if (!supabase) return;
     setSaving(true);
     try {
-      let error;
+      const updates = [];
+
       if (activeSection === 'home') {
-        const res = await supabase.from('site_settings').upsert({ key: 'home_hero', value: homeData });
-        error = res.error;
+        updates.push(supabase.from('site_settings').upsert({ key: 'home_hero', value: homeData }));
+        updates.push(supabase.from('site_settings').upsert({ key: 'home_value_props', value: valuePropsData }));
+        updates.push(supabase.from('site_settings').upsert({ key: 'home_quick_nav', value: quickNavData }));
       } else if (activeSection === 'about') {
-        const res = await supabase.from('site_settings').upsert({ key: 'about_profile', value: aboutData });
-        error = res.error;
+        updates.push(supabase.from('site_settings').upsert({ key: 'about_profile', value: aboutData }));
       } else if (activeSection === 'community') {
-        const res = await supabase.from('site_settings').upsert({ key: 'community_page', value: communityData });
-        error = res.error;
+        updates.push(supabase.from('site_settings').upsert({ key: 'community_page', value: communityData }));
       } else if (activeSection === 'contribute') {
-        const res = await supabase.from('site_settings').upsert({ key: 'contribute_page', value: contributeData });
-        error = res.error;
+        updates.push(supabase.from('site_settings').upsert({ key: 'contribute_page', value: contributeData }));
+      } else if (activeSection === 'global') {
+        updates.push(supabase.from('site_settings').upsert({ key: 'site_branding', value: brandingData }));
+        updates.push(supabase.from('site_settings').upsert({ key: 'site_footer', value: footerData }));
       }
       
-      if (error) throw error;
+      await Promise.all(updates);
       
       onRefresh();
       alert('Settings saved successfully!');
@@ -62,7 +105,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
     }
   };
 
-  const TabButton = ({ id, label, icon: Icon }: { id: Section, label: string, icon: any }) => (
+  const TabButton = ({ id, label, icon: Icon }: { id: any, label: string, icon: any }) => (
     <button
       onClick={() => setActiveSection(id)}
       className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 border-b-2 transition-colors ${
@@ -78,6 +121,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <TabButton id="global" label="Global" icon={Settings} />
         <TabButton id="home" label="Home" icon={Layout} />
         <TabButton id="about" label="Profile" icon={User} />
         <TabButton id="community" label="Community" icon={Globe} />
@@ -85,8 +129,67 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
       </div>
 
       <div className="p-8">
-        {activeSection === 'home' && (
+        {/* GLOBAL SETTINGS */}
+        {activeSection === 'global' && (
           <div className="space-y-8">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Branding</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Brand Name (First Part)</label>
+                  <input
+                    type="text"
+                    value={brandingData.siteName}
+                    onChange={e => setBrandingData({...brandingData, siteName: e.target.value})}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    placeholder="Knowthe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Logo Text (Colored Part)</label>
+                  <input
+                    type="text"
+                    value={brandingData.logoText}
+                    onChange={e => setBrandingData({...brandingData, logoText: e.target.value})}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    placeholder="Algo"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-8">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Footer</h3>
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Main Text</label>
+                  <input
+                    type="text"
+                    value={footerData.text}
+                    onChange={e => setFooterData({...footerData, text: e.target.value})}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    placeholder="Made with Heart by..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Copyright Notice</label>
+                  <input
+                    type="text"
+                    value={footerData.copyright}
+                    onChange={e => setFooterData({...footerData, copyright: e.target.value})}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    placeholder="All rights reserved."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* HOME SETTINGS */}
+        {activeSection === 'home' && (
+          <div className="space-y-10">
+            {/* Hero */}
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <Layout size={20} className="text-indigo-600" /> Hero Section
@@ -122,6 +225,160 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
               </div>
             </div>
 
+            {/* Value Props */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Value Propositions</h3>
+                <button 
+                  onClick={() => setValuePropsData([...valuePropsData, { icon: 'Star', title: 'New Feature', desc: 'Description' }])}
+                  className="text-sm text-indigo-600 hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} /> Add Item
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {valuePropsData.map((item, idx) => (
+                  <div key={idx} className="flex gap-4 items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Icon (Lucide Name)</label>
+                        <div className="flex items-center gap-2">
+                          <DynamicIcon name={item.icon} size={20} className="text-gray-400" />
+                          <input 
+                            value={item.icon}
+                            onChange={e => {
+                              const newItems = [...valuePropsData];
+                              newItems[idx].icon = e.target.value;
+                              setValuePropsData(newItems);
+                            }}
+                            className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Title</label>
+                        <input 
+                          value={item.title}
+                          onChange={e => {
+                            const newItems = [...valuePropsData];
+                            newItems[idx].title = e.target.value;
+                            setValuePropsData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Description</label>
+                        <input 
+                          value={item.desc}
+                          onChange={e => {
+                            const newItems = [...valuePropsData];
+                            newItems[idx].desc = e.target.value;
+                            setValuePropsData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setValuePropsData(valuePropsData.filter((_, i) => i !== idx))}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Nav */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Quick Nav Cards</h3>
+                <button 
+                  onClick={() => setQuickNavData([...quickNavData, { icon: 'Link', title: 'New Link', desc: 'Go somewhere', link: '/', color: 'bg-gray-500' }])}
+                  className="text-sm text-indigo-600 hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} /> Add Card
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {quickNavData.map((item, idx) => (
+                  <div key={idx} className="flex gap-4 items-start p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Icon</label>
+                        <input 
+                          value={item.icon}
+                          onChange={e => {
+                            const newItems = [...quickNavData];
+                            newItems[idx].icon = e.target.value;
+                            setQuickNavData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-1">
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Title</label>
+                        <input 
+                          value={item.title}
+                          onChange={e => {
+                            const newItems = [...quickNavData];
+                            newItems[idx].title = e.target.value;
+                            setQuickNavData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-1">
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Desc</label>
+                        <input 
+                          value={item.desc}
+                          onChange={e => {
+                            const newItems = [...quickNavData];
+                            newItems[idx].desc = e.target.value;
+                            setQuickNavData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Link</label>
+                        <input 
+                          value={item.link}
+                          onChange={e => {
+                            const newItems = [...quickNavData];
+                            newItems[idx].link = e.target.value;
+                            setQuickNavData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-gray-500 mb-1 block">Color (Tailwind)</label>
+                        <input 
+                          value={item.color}
+                          onChange={e => {
+                            const newItems = [...quickNavData];
+                            newItems[idx].color = e.target.value;
+                            setQuickNavData(newItems);
+                          }}
+                          className="w-full px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => setQuickNavData(quickNavData.filter((_, i) => i !== idx))}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Other Home Sections */}
             <div className="border-t border-gray-200 dark:border-gray-800 pt-8 space-y-4">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <MessageSquare size={20} className="text-indigo-600" /> Community Section
@@ -174,6 +431,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
           </div>
         )}
 
+        {/* PROFILE SETTINGS */}
         {activeSection === 'about' && (
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Profile Configuration</h3>
@@ -241,6 +499,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
           </div>
         )}
 
+        {/* COMMUNITY SETTINGS */}
         {activeSection === 'community' && (
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Community Page Header</h3>
@@ -264,6 +523,7 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
           </div>
         )}
 
+        {/* CONTRIBUTE SETTINGS */}
         {activeSection === 'contribute' && (
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Contribute Page Header</h3>

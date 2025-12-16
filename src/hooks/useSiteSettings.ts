@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { HomeSettings, AboutSettings, Category, CommunityPageSettings, ContributePageSettings } from '../types';
+import { 
+  HomeSettings, AboutSettings, Category, CommunityPageSettings, ContributePageSettings,
+  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem
+} from '../types';
 
 const DEFAULT_HOME: HomeSettings = {
   title: "Decode the Algorithm of Success.",
@@ -41,11 +44,41 @@ const DEFAULT_CONTRIBUTE: ContributePageSettings = {
   subtitle: "Share your knowledge with the community. Whether it's a new algorithm, a system design case study, or a web dev tutorial."
 };
 
+const DEFAULT_BRANDING: BrandingSettings = {
+  siteName: "Knowthe",
+  logoText: "Algo"
+};
+
+const DEFAULT_FOOTER: FooterSettings = {
+  text: "Made with Heart by Safaruzzaman Shovo",
+  copyright: "All rights reserved."
+};
+
+const DEFAULT_VALUE_PROPS: ValuePropItem[] = [
+  { icon: "Layers", title: "Structured Learning", desc: "Curated paths from basics to advanced engineering concepts." },
+  { icon: "BookOpen", title: "Research-Driven", desc: "Content backed by academic rigor and industry standards." },
+  { icon: "Users", title: "Community Support", desc: "Learn together with a network of passionate developers." },
+  { icon: "Briefcase", title: "Career Focused", desc: "Build a portfolio that stands out to top tech recruiters." }
+];
+
+const DEFAULT_QUICK_NAV: QuickNavItem[] = [
+  { icon: "Code2", title: "Browse All Courses", desc: "Explore Full Curriculum", link: "/courses", color: "bg-blue-500" },
+  { icon: "MessageSquare", title: "Join Community", desc: "Read Discussions", link: "/community", color: "bg-purple-500" },
+  { icon: "PenTool", title: "Let's Collaborate", desc: "Work Together", link: "/collaborate", color: "bg-rose-500" }
+];
+
 export const useSiteSettings = () => {
   const [homeSettings, setHomeSettings] = useState<HomeSettings>(DEFAULT_HOME);
   const [aboutSettings, setAboutSettings] = useState<AboutSettings>(DEFAULT_ABOUT);
   const [communitySettings, setCommunitySettings] = useState<CommunityPageSettings>(DEFAULT_COMMUNITY);
   const [contributeSettings, setContributeSettings] = useState<ContributePageSettings>(DEFAULT_CONTRIBUTE);
+  
+  // New Global Settings
+  const [branding, setBranding] = useState<BrandingSettings>(DEFAULT_BRANDING);
+  const [footer, setFooter] = useState<FooterSettings>(DEFAULT_FOOTER);
+  const [valueProps, setValueProps] = useState<ValuePropItem[]>(DEFAULT_VALUE_PROPS);
+  const [quickNav, setQuickNav] = useState<QuickNavItem[]>(DEFAULT_QUICK_NAV);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -68,6 +101,19 @@ export const useSiteSettings = () => {
 
         const contribute = settingsData.find(s => s.key === 'contribute_page');
         if (contribute) setContributeSettings({ ...DEFAULT_CONTRIBUTE, ...contribute.value });
+
+        // New Settings
+        const brand = settingsData.find(s => s.key === 'site_branding');
+        if (brand) setBranding({ ...DEFAULT_BRANDING, ...brand.value });
+
+        const foot = settingsData.find(s => s.key === 'site_footer');
+        if (foot) setFooter({ ...DEFAULT_FOOTER, ...foot.value });
+
+        const vProps = settingsData.find(s => s.key === 'home_value_props');
+        if (vProps) setValueProps(vProps.value);
+
+        const qNav = settingsData.find(s => s.key === 'home_quick_nav');
+        if (qNav) setQuickNav(qNav.value);
       }
 
       // Fetch Categories
@@ -90,6 +136,10 @@ export const useSiteSettings = () => {
     aboutSettings, 
     communitySettings,
     contributeSettings,
+    branding,
+    footer,
+    valueProps,
+    quickNav,
     categories, 
     loading, 
     refresh: fetchData 

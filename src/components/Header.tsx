@@ -4,6 +4,7 @@ import { Menu, X, BrainCircuit, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
+import { useSiteSettings } from '../hooks/useSiteSettings';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -11,6 +12,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const [scrolled, setScrolled] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const { branding } = useSiteSettings();
 
   React.useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -20,7 +22,6 @@ export const Header = () => {
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session }, error }) => {
         if (error) {
-          // If token is invalid, ensure we are logged out locally
           supabase.auth.signOut();
           setIsAdmin(false);
         } else {
@@ -65,7 +66,7 @@ export const Header = () => {
             </div>
           </div>
           <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors duration-300">
-            Knowthe<span className="text-indigo-600 dark:text-indigo-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">Algo</span>
+            {branding.siteName}<span className="text-indigo-600 dark:text-indigo-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{branding.logoText}</span>
           </span>
         </Link>
 
