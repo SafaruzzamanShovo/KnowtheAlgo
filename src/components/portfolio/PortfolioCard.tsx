@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ExternalLink, Github, FileText, ChevronDown, ChevronUp, 
-  Calendar, User, Users, Tag, Award, Briefcase, Code2, Star 
+  Calendar, User, Users, Tag, Award, Briefcase, Code2, Star,
+  ArrowRight
 } from 'lucide-react';
 import { PortfolioItem, PortfolioSection } from '../../types';
 import { cn } from '../../lib/utils';
@@ -15,13 +16,13 @@ interface PortfolioCardProps {
 }
 
 const sectionConfig = {
-  research: { color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200', icon: FileText },
-  project: { color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200', icon: Code2 },
-  experience: { color: 'bg-indigo-500', text: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200', icon: Briefcase },
-  education: { color: 'bg-purple-500', text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-200', icon: User },
-  honor: { color: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', icon: Award },
-  leadership: { color: 'bg-rose-500', text: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200', icon: Star },
-  news: { color: 'bg-gray-500', text: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200', icon: Star },
+  research: { color: 'bg-blue-500', text: 'text-blue-600', border: 'border-blue-500', icon: FileText, label: 'Research' },
+  project: { color: 'bg-emerald-500', text: 'text-emerald-600', border: 'border-emerald-500', icon: Code2, label: 'Project' },
+  experience: { color: 'bg-indigo-500', text: 'text-indigo-600', border: 'border-indigo-500', icon: Briefcase, label: 'Experience' },
+  education: { color: 'bg-purple-500', text: 'text-purple-600', border: 'border-purple-500', icon: User, label: 'Education' },
+  honor: { color: 'bg-amber-500', text: 'text-amber-600', border: 'border-amber-500', icon: Award, label: 'Honor' },
+  leadership: { color: 'bg-rose-500', text: 'text-rose-600', border: 'border-rose-500', icon: Star, label: 'Leadership' },
+  news: { color: 'bg-gray-500', text: 'text-gray-600', border: 'border-gray-500', icon: Star, label: 'Update' },
 };
 
 export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, type, index = 0 }) => {
@@ -29,12 +30,20 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, type, index 
   const [isHovered, setIsHovered] = useState(false);
   
   const config = sectionConfig[type] || sectionConfig.research;
-  const isRecruiterMode = localStorage.getItem('recruiter-mode') === 'true';
+  const Icon = config.icon;
 
   // Animation variants
   const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, duration: 0.4 } }
+    hidden: { opacity: 0, y: 30 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      transition: { 
+        delay: index * 0.1, 
+        duration: 0.5,
+        ease: [0.21, 0.47, 0.32, 0.98] // Smooth spring-like ease
+      } 
+    }
   };
 
   return (
@@ -44,107 +53,113 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, type, index 
       whileInView="visible"
       viewport={{ once: true, margin: "-50px" }}
       className={cn(
-        "group relative bg-white dark:bg-gray-900 rounded-2xl border transition-all duration-300 overflow-hidden",
-        isHovered ? "shadow-xl translate-y-[-4px] border-gray-300 dark:border-gray-700" : "shadow-sm border-gray-200 dark:border-gray-800"
+        "group relative bg-white dark:bg-gray-900 rounded-xl border transition-all duration-300 overflow-hidden",
+        isHovered 
+          ? "shadow-xl translate-y-[-4px] border-gray-300 dark:border-gray-700" 
+          : "shadow-sm border-gray-200 dark:border-gray-800"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Accent Strip */}
-      <div className={cn("absolute top-0 left-0 w-1 h-full transition-all duration-300", config.color, isHovered ? "opacity-100" : "opacity-60")} />
+      {/* Accent Strip (Left Edge) */}
+      <div className={cn(
+        "absolute left-0 top-0 bottom-0 w-1 transition-all duration-300",
+        config.color,
+        isHovered ? "opacity-100" : "opacity-60"
+      )} />
 
-      <div className="p-6 pl-8">
-        {/* Header Row */}
+      <div className="p-6 pl-8 flex flex-col h-full">
+        {/* Header: Badges & Date */}
         <div className="flex justify-between items-start mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={cn("text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full", config.bg, config.text, "dark:bg-opacity-10")}>
-                {item.details?.type || type}
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gray-50 dark:bg-gray-800",
+              config.text
+            )}>
+              <Icon size={12} />
+              {item.details?.type || config.label}
+            </span>
+            {item.details?.status === 'ongoing' && (
+              <span className="px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase tracking-wider">
+                Ongoing
               </span>
-              {item.details?.status === 'ongoing' && (
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  Ongoing
-                </span>
-              )}
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-              {item.title}
-            </h3>
+            )}
           </div>
-          
-          {/* Date Badge */}
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 dark:bg-gray-800 px-2.5 py-1 rounded-lg">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-400 dark:text-gray-500">
             <Calendar size={12} />
             {item.period}
           </div>
         </div>
 
-        {/* Subtitle / Organization */}
-        {(item.organization || item.subtitle) && (
-          <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-4 flex items-center gap-2">
-            {item.organization && <span>{item.organization}</span>}
-            {item.organization && item.subtitle && <span className="text-gray-300 dark:text-gray-700">•</span>}
-            {item.subtitle && <span className="text-gray-500">{item.subtitle}</span>}
-          </div>
-        )}
+        {/* Title & Subtitle */}
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">
+            {item.title}
+          </h3>
+          {(item.organization || item.subtitle) && (
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+              {item.organization}
+              {item.organization && item.subtitle && <span className="mx-1.5 opacity-50">•</span>}
+              {item.subtitle}
+            </div>
+          )}
+        </div>
 
         {/* Metadata Row (Recruiter Friendly) */}
-        <div className="flex flex-wrap gap-y-2 gap-x-4 mb-4 text-xs text-gray-500 dark:text-gray-400">
+        <div className="flex flex-wrap gap-y-2 gap-x-4 mb-5 text-xs text-gray-500 dark:text-gray-400">
           {item.details?.advisor && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">
               <User size={12} className="text-indigo-500" />
               <span>Advisor: {item.details.advisor}</span>
             </div>
           )}
           {item.details?.team && item.details.team.length > 0 && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">
               <Users size={12} className="text-indigo-500" />
-              <span>Team: {item.details.team.length} members</span>
+              <span>{item.details.team.length} Team Members</span>
             </div>
           )}
           {item.details?.tags && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 bg-gray-50 dark:bg-gray-800/50 px-2 py-1 rounded">
               <Tag size={12} className="text-indigo-500" />
               <span>{item.details.tags.slice(0, 3).join(', ')}</span>
             </div>
           )}
         </div>
 
-        {/* Description */}
-        <div className="relative">
+        {/* Description (Truncated) */}
+        <div className="relative mb-4">
           <div 
             className={cn(
-              "text-sm text-gray-600 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none",
+              "text-sm text-gray-600 dark:text-gray-300 leading-relaxed prose dark:prose-invert max-w-none transition-all duration-300",
               !isExpanded && "line-clamp-2"
             )}
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(item.description || '') }}
           />
         </div>
 
-        {/* Expandable Content */}
+        {/* Expanded Content */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800"
+              className="overflow-hidden"
             >
-              {/* Full Description if truncated */}
-              {/* Additional Links & Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-4">
                 {item.details?.team && (
                   <div>
-                    <span className="font-bold text-gray-900 dark:text-white block mb-1">Team</span>
-                    <span className="text-gray-600 dark:text-gray-400">{item.details.team.join(', ')}</span>
+                    <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider block mb-1">Team</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{item.details.team.join(', ')}</span>
                   </div>
                 )}
                 {item.details?.tags && (
                   <div>
-                    <span className="font-bold text-gray-900 dark:text-white block mb-1">Technologies</span>
-                    <div className="flex flex-wrap gap-1">
+                    <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider block mb-2">Technologies</span>
+                    <div className="flex flex-wrap gap-1.5">
                       {item.details.tags.map(tag => (
-                        <span key={tag} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-400">
+                        <span key={tag} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
                           {tag}
                         </span>
                       ))}
@@ -156,8 +171,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, type, index 
           )}
         </AnimatePresence>
 
-        {/* Actions Footer */}
-        <div className="mt-6 flex items-center justify-between">
+        {/* Footer Actions */}
+        <div className="mt-auto pt-4 flex items-center justify-between">
           <div className="flex gap-2">
             {item.details?.links?.github && (
               <ActionButton href={item.details.links.github} icon={Github} label="Code" />
@@ -175,10 +190,10 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, type, index 
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs font-bold text-gray-400 hover:text-indigo-600 flex items-center gap-1 transition-colors"
+            className="text-xs font-bold text-gray-400 hover:text-indigo-600 flex items-center gap-1 transition-colors group/btn"
           >
-            {isExpanded ? 'Less' : 'More'}
-            {isExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            {isExpanded ? 'Close' : 'Details'}
+            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} className="group-hover/btn:translate-y-0.5 transition-transform" />}
           </button>
         </div>
       </div>
@@ -191,7 +206,7 @@ const ActionButton = ({ href, icon: Icon, label }: { href: string, icon: any, la
     href={href}
     target="_blank"
     rel="noreferrer"
-    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-xs font-bold border border-gray-200 dark:border-gray-700 hover:border-indigo-200 dark:hover:border-indigo-800"
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 dark:hover:text-white transition-all text-xs font-bold border border-gray-200 dark:border-gray-700 hover:border-indigo-600 dark:hover:border-indigo-600 hover:shadow-md"
   >
     <Icon size={12} />
     {label}
