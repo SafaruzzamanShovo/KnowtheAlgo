@@ -34,20 +34,28 @@ export const SiteEditor: React.FC<SiteEditorProps> = ({
     if (!supabase) return;
     setSaving(true);
     try {
+      let error;
       if (activeSection === 'home') {
-        await supabase.from('site_settings').upsert({ key: 'home_hero', value: homeData });
+        const res = await supabase.from('site_settings').upsert({ key: 'home_hero', value: homeData });
+        error = res.error;
       } else if (activeSection === 'about') {
-        await supabase.from('site_settings').upsert({ key: 'about_profile', value: aboutData });
+        const res = await supabase.from('site_settings').upsert({ key: 'about_profile', value: aboutData });
+        error = res.error;
       } else if (activeSection === 'community') {
-        await supabase.from('site_settings').upsert({ key: 'community_page', value: communityData });
+        const res = await supabase.from('site_settings').upsert({ key: 'community_page', value: communityData });
+        error = res.error;
       } else if (activeSection === 'contribute') {
-        await supabase.from('site_settings').upsert({ key: 'contribute_page', value: contributeData });
+        const res = await supabase.from('site_settings').upsert({ key: 'contribute_page', value: contributeData });
+        error = res.error;
       }
+      
+      if (error) throw error;
+      
       onRefresh();
       alert('Settings saved successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Failed to save settings.');
+      alert(`Failed to save settings: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }

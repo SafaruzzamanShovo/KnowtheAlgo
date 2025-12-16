@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Layers } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Category } from '../../types';
+import { slugify } from '../../lib/utils';
 
 interface CategoryManagerProps {
   categories: Category[];
@@ -14,8 +15,18 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, on
 
   const handleAdd = async () => {
     if (!supabase || !newCat.title) return;
-    const { error } = await supabase.from('categories').insert([newCat]);
-    if (!error) {
+    
+    // Generate a slug ID for the category
+    const id = slugify(newCat.title);
+    
+    const { error } = await supabase.from('categories').insert([{
+      id,
+      ...newCat
+    }]);
+
+    if (error) {
+      alert(`Error adding category: ${error.message}`);
+    } else {
       setNewCat({ title: '', description: '', color: 'from-blue-500 to-cyan-500' });
       setIsAdding(false);
       onRefresh();
@@ -25,7 +36,12 @@ export const CategoryManager: React.FC<CategoryManagerProps> = ({ categories, on
   const handleDelete = async (id: string) => {
     if (!supabase || !confirm('Delete this category?')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (!error) onRefresh();
+    
+    if (error) {
+      alert(`Error deleting category: ${error.message}`);
+    } else {
+      onRefresh();
+    }
   };
 
   return (

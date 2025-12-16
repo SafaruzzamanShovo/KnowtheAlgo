@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Edit2, Save, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PortfolioItem, PortfolioSection } from '../../types';
+import { generateId } from '../../lib/utils';
 
 interface PortfolioManagerProps {
   items: PortfolioItem[];
@@ -38,21 +39,36 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
       details: editingItem.details || {}
     };
 
+    let error;
     if (editingItem.id) {
-      await supabase.from('portfolio_items').update(payload).eq('id', editingItem.id);
+      const res = await supabase.from('portfolio_items').update(payload).eq('id', editingItem.id);
+      error = res.error;
     } else {
-      await supabase.from('portfolio_items').insert([payload]);
+      // Generate a new UUID for the item
+      const res = await supabase.from('portfolio_items').insert([{
+        ...payload,
+        id: generateId()
+      }]);
+      error = res.error;
     }
 
-    setEditingItem(null);
-    setIsAdding(false);
-    onRefresh();
+    if (error) {
+      alert(`Error saving item: ${error.message}`);
+    } else {
+      setEditingItem(null);
+      setIsAdding(false);
+      onRefresh();
+    }
   };
 
   const handleDelete = async (id: string) => {
     if (!supabase || !confirm('Delete this item?')) return;
-    await supabase.from('portfolio_items').delete().eq('id', id);
-    onRefresh();
+    const { error } = await supabase.from('portfolio_items').delete().eq('id', id);
+    if (error) {
+      alert(`Error deleting item: ${error.message}`);
+    } else {
+      onRefresh();
+    }
   };
 
   const startEdit = (item: PortfolioItem) => {

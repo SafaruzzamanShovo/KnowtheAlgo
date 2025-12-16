@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
 import { parseMarkdownToBlocks, blocksToMarkdown, blocksToHtml } from '../../lib/markdownParser';
 import { RichTextEditor } from '../RichTextEditor';
-import { cn } from '../../lib/utils';
+import { cn, slugify } from '../../lib/utils';
 
 interface CurriculumManagerProps {
   subjects: Subject[];
@@ -42,15 +42,19 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     
     if (supabase) {
       const { error } = await supabase.from(table).delete().eq('id', id);
-      if (!error) onRefresh();
-      else alert('Error deleting item');
+      if (!error) {
+        onRefresh();
+      } else {
+        alert(`Error deleting item: ${error.message}`);
+      }
     }
   };
 
   const handleAddSubject = async () => {
     if (!newItemTitle.trim() || !supabase) return;
     
-    const id = newItemTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const id = slugify(newItemTitle);
+    
     const { error } = await supabase.from('subjects').insert({
       id,
       title: newItemTitle,
@@ -65,13 +69,16 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       setNewItemDesc('');
       setIsAddingSubject(false);
       onRefresh();
+    } else {
+      alert(`Error creating subject: ${error.message}`);
     }
   };
 
   const handleAddModule = async (subjectId: string) => {
     if (!newItemTitle.trim() || !supabase) return;
     
-    const id = newItemTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const id = slugify(newItemTitle);
+    
     const { error } = await supabase.from('modules').insert({
       id,
       title: newItemTitle,
@@ -83,13 +90,16 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       setNewItemTitle('');
       setAddingModuleTo(null);
       onRefresh();
+    } else {
+      alert(`Error creating module: ${error.message}`);
     }
   };
 
   const handleAddTopic = async (moduleId: string) => {
     if (!newItemTitle.trim() || !supabase) return;
 
-    const id = newItemTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const id = slugify(newItemTitle);
+    
     const { error } = await supabase.from('topics').insert({
       id,
       title: newItemTitle,
@@ -102,6 +112,8 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       setNewItemTitle('');
       setAddingTopicTo(null);
       onRefresh();
+    } else {
+      alert(`Error creating topic: ${error.message}`);
     }
   };
 
@@ -114,7 +126,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       setTopicContent(blocksToMarkdown(topic.content));
     } else {
       setEditorMode('rich');
-      setTopicContent(topic.content || '');
+      setTopicContent(typeof topic.content === 'string' ? topic.content : '');
     }
   };
 
@@ -154,7 +166,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       setIsFullScreen(false);
       onRefresh();
     } else {
-      alert('Failed to save topic');
+      alert(`Failed to save topic: ${error.message}`);
     }
   };
 

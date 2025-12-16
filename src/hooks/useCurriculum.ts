@@ -15,7 +15,7 @@ export const useCurriculum = () => {
         return;
       }
 
-      // 1. Fetch Subjects (Removed sorting by created_at to prevent crashes if column missing)
+      // 1. Fetch Subjects
       const { data: subjectsData, error: subjectsError } = await supabase
         .from('subjects')
         .select('*');
@@ -24,7 +24,6 @@ export const useCurriculum = () => {
 
       // If DB is empty, fall back to mock data
       if (!subjectsData || subjectsData.length === 0) {
-        console.log('Database empty, using mock data');
         setSubjects(mockSubjects);
         return;
       }
@@ -52,11 +51,26 @@ export const useCurriculum = () => {
             ...module,
             topics: topicsData
               .filter(t => t.module_id === module.id)
-              .map(topic => ({
-                ...topic,
-                // Ensure content is parsed if it comes as a string, or used as is if JSON
-                content: typeof topic.content === 'string' ? JSON.parse(topic.content) : topic.content
-              }))
+              .map(topic => {
+                let parsedContent = topic.content;
+                // Safely try to parse content if it's a string that looks like JSON
+                if (typeof topic.content === 'string') {
+                  try {
+                    const parsed = JSON.parse(topic.content);
+                    // Only use parsed if it's an object/array (Legacy Blocks), otherwise keep as string (Rich Text HTML)
+                    if (typeof parsed === 'object' && parsed !== null) {
+                      parsedContent = parsed;
+                    }
+                  } catch (e) {
+                    // Content is likely plain HTML string, keep as is
+                  }
+                }
+                
+                return {
+                  ...topic,
+                  content: parsedContent
+                };
+              })
           }))
       }));
 
@@ -65,7 +79,6 @@ export const useCurriculum = () => {
     } catch (err) {
       console.error('Error fetching curriculum:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch curriculum');
-      // Fallback on error
       setSubjects(mockSubjects);
     } finally {
       setLoading(false);
