@@ -14,16 +14,20 @@ const DEFAULT_HOME: HomeSettings = {
 
 const DEFAULT_ABOUT: AboutSettings = {
   name: "Alex Dev",
-  role: "Senior Software Engineer",
-  bio: "I specialize in building scalable distributed systems.",
-  image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-  skills: ["React", "System Design"],
+  role: "Senior Software Engineer & Researcher",
+  bio: "I bridge the gap between theoretical computer science and practical software engineering. My work focuses on distributed systems, AI infrastructure, and making complex algorithms accessible to everyone.",
+  image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+  skills: [
+    "React", "TypeScript", "Node.js", "Python", "Go", "Rust", 
+    "System Design", "Distributed Systems", "Kubernetes", "Docker", "AWS",
+    "TensorFlow", "PyTorch", "GraphQL", "PostgreSQL", "Redis"
+  ],
   resume_link: "#",
   socials: {
-    github: "#",
-    linkedin: "#",
-    scholar: "#",
-    email: "mailto:example@gmail.com"
+    github: "https://github.com",
+    linkedin: "https://linkedin.com",
+    scholar: "https://scholar.google.com",
+    email: "mailto:alex@example.com"
   }
 };
 
