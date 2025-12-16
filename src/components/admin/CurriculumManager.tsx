@@ -23,6 +23,8 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   // Editing States
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [topicContent, setTopicContent] = useState<string | any[]>('');
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  
   const [isSaving, setIsSaving] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -64,8 +66,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
     if (targetIndex < 0 || targetIndex >= newItems.length) return;
 
-    // Re-assign order based on new array position
-    // Swap in array first
+    // Swap items in the array first
     const temp = newItems[index];
     newItems[index] = newItems[targetIndex];
     newItems[targetIndex] = temp;
@@ -106,6 +107,28 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
       onRefresh();
     } else {
       alert(`Error creating subject: ${error.message}`);
+    }
+  };
+
+  const handleSaveSubject = async () => {
+    if (!editingSubject || !supabase) return;
+    setIsSaving(true);
+    
+    const { error } = await supabase
+      .from('subjects')
+      .update({ 
+        title: editingSubject.title,
+        description: editingSubject.description 
+      })
+      .eq('id', editingSubject.id);
+
+    setIsSaving(false);
+
+    if (!error) {
+      setEditingSubject(null);
+      onRefresh();
+    } else {
+      alert(`Error updating subject: ${error.message}`);
     }
   };
 
@@ -290,49 +313,101 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
           
           {/* Subject Header */}
           <div className="flex items-center justify-between p-4 bg-gray-50/50 dark:bg-gray-900/50">
-            <div className="flex items-center gap-3">
-               {/* Reorder Controls */}
-               <div className="flex flex-col gap-0.5">
-                  <button 
-                    onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'up')}
-                    disabled={sIdx === 0}
-                    className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
-                  >
-                    <ArrowUp size={14} />
-                  </button>
-                  <button 
-                    onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'down')}
-                    disabled={sIdx === sortedSubjects.length - 1}
-                    className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
-                  >
-                    <ArrowDown size={14} />
-                  </button>
-               </div>
+            {editingSubject?.id === subject.id ? (
+              <div className="flex-1 flex gap-2 items-center mr-4">
+                <div className="flex-1 grid gap-2">
+                  <input 
+                    type="text" 
+                    value={editingSubject.title}
+                    onChange={e => setEditingSubject({...editingSubject, title: e.target.value})}
+                    className="px-3 py-1.5 rounded border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-gray-800 text-sm font-bold"
+                    placeholder="Subject Title"
+                  />
+                  <input 
+                    type="text" 
+                    value={editingSubject.description}
+                    onChange={e => setEditingSubject({...editingSubject, description: e.target.value})}
+                    className="px-3 py-1.5 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs"
+                    placeholder="Description"
+                  />
+                </div>
+                <button 
+                  onClick={handleSaveSubject}
+                  disabled={isSaving}
+                  className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                  title="Save"
+                >
+                  <Save size={16} />
+                </button>
+                <button 
+                  onClick={() => setEditingSubject(null)}
+                  className="p-2 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg"
+                  title="Cancel"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                 {/* Reorder Controls */}
+                 <div className="flex flex-col gap-0.5">
+                    <button 
+                      onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'up')}
+                      disabled={sIdx === 0}
+                      className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                    >
+                      <ArrowUp size={14} />
+                    </button>
+                    <button 
+                      onClick={() => handleMove('subjects', sortedSubjects, sIdx, 'down')}
+                      disabled={sIdx === sortedSubjects.length - 1}
+                      className="text-gray-400 hover:text-indigo-600 disabled:opacity-30"
+                    >
+                      <ArrowDown size={14} />
+                    </button>
+                 </div>
 
-               <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}>
-                {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color}`}></div>
-                <span className="font-bold text-gray-900 dark:text-white">{subject.title}</span>
-                <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400">
-                  {subject.modules.length} Modules
-                </span>
-               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setAddingModuleTo(subject.id)}
-                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
-                title="Add Module"
-              >
-                <Plus size={16} />
-              </button>
-              <button 
-                onClick={() => handleDelete('subjects', subject.id)}
-                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-              >
-                <Trash2 size={16} />
-              </button>
-            </div>
+                 <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedSubject(expandedSubject === subject.id ? null : subject.id)}>
+                  {expandedSubject === subject.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${subject.color}`}></div>
+                  <div>
+                    <div className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      {subject.title}
+                      <span className="text-xs px-2 py-0.5 bg-gray-200 dark:bg-gray-800 rounded-full text-gray-600 dark:text-gray-400 font-normal">
+                        {subject.modules.length} Modules
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{subject.description}</p>
+                  </div>
+                 </div>
+              </div>
+            )}
+
+            {!editingSubject && (
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setAddingModuleTo(subject.id)}
+                  className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                  title="Add Module"
+                >
+                  <Plus size={16} />
+                </button>
+                <button 
+                  onClick={() => setEditingSubject(subject)}
+                  className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  title="Edit Subject"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button 
+                  onClick={() => handleDelete('subjects', subject.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="Delete Subject"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Modules List */}
