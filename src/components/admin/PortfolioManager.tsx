@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit2, Save, X, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, ArrowUp, ArrowDown, Palette } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { PortfolioItem, PortfolioSection } from '../../types';
 import { generateId } from '../../lib/utils';
@@ -95,33 +95,6 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
     newItems[index] = newItems[targetIndex];
     newItems[targetIndex] = temp;
 
-    // Optimistic UI update (optional, but we'll rely on refresh for simplicity)
-    
-    // Update DB
-    const itemA = newItems[index];
-    const itemB = newItems[targetIndex];
-
-    // Swap their display_orders
-    const orderA = itemA.display_order || 0;
-    const orderB = itemB.display_order || 0;
-
-    // We actually want to swap the order values based on their NEW positions
-    // But simplest way is to just swap the values of the two items involved
-    // Wait, if we swap positions, we swap their order values.
-    
-    // Let's just swap the display_order values of the two items
-    const { error: err1 } = await supabase
-      .from('portfolio_items')
-      .update({ display_order: newItems[targetIndex].display_order }) // Give A's order to B (which is now at A's old spot)
-      .eq('id', itemA.id); // Wait, logic is tricky.
-
-    // Correct Logic:
-    // Item moving UP (index -> index-1)
-    // Item at index gets order of item at index-1
-    // Item at index-1 gets order of item at index
-    
-    // Let's just re-assign order based on array index to be safe and robust
-    // This handles gaps too.
     const updates = newItems.map((item, idx) => ({
       id: item.id,
       display_order: idx + 1
@@ -281,6 +254,25 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
                         })}
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
+                        <Palette size={12} /> Color Theme
+                      </label>
+                      <select 
+                        className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
+                        value={editingItem.details?.color || ''}
+                        onChange={e => setEditingItem({
+                          ...editingItem, 
+                          details: { ...editingItem.details, color: e.target.value }
+                        })}
+                      >
+                        <option value="">Auto (Cycle)</option>
+                        <option value="nebula">Nebula (Purple/Blue)</option>
+                        <option value="ocean">Ocean (Blue/Cyan)</option>
+                        <option value="sunset">Sunset (Orange/Rose)</option>
+                        <option value="forest">Forest (Emerald/Teal)</option>
+                      </select>
+                    </div>
                   </>
                 )}
 
@@ -356,15 +348,17 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1">Gradient (Tailwind classes)</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">Demo Link</label>
                       <input 
                         className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
-                        value={editingItem.details?.imageGradient || 'from-blue-500 to-cyan-500'}
+                        value={editingItem.details?.links?.demo || ''}
                         onChange={e => setEditingItem({
                           ...editingItem, 
-                          details: { ...editingItem.details, imageGradient: e.target.value }
+                          details: { 
+                            ...editingItem.details, 
+                            links: { ...editingItem.details?.links, demo: e.target.value } 
+                          }
                         })}
-                        placeholder="from-blue-500 to-cyan-500"
                       />
                     </div>
                   </>
@@ -382,6 +376,7 @@ export const PortfolioManager: React.FC<PortfolioManagerProps> = ({ items, onRef
                         })}
                         placeholder="Award, Star, Trophy..."
                       />
+                      <p className="text-[10px] text-gray-400 mt-1">Leave empty for default icon.</p>
                    </div>
                 )}
               </div>

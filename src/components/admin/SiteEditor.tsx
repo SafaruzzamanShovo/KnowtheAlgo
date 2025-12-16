@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2 } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { 
   HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings,
@@ -13,16 +13,9 @@ interface SiteEditorProps {
   initialAbout: AboutSettings;
   initialCommunity: CommunityPageSettings;
   initialContribute: ContributePageSettings;
-  // New props
-  // We'll fetch these inside or pass them. For consistency with existing pattern, let's assume parent passes them or we fetch.
-  // Actually, to avoid breaking changes in Admin.tsx, let's just use the hook inside or update Admin.tsx.
-  // I'll update Admin.tsx to pass these.
+  onRefresh: () => void;
 }
 
-// Updating Props to include new settings
-// Note: I will update Admin.tsx to pass these new props.
-// For now, I'll use `any` for the new props in the signature to avoid TS errors before Admin.tsx is updated, 
-// but ideally we type them.
 export const SiteEditor = ({ 
   initialHome, initialAbout, initialCommunity, initialContribute, onRefresh 
 }: any) => {
@@ -34,16 +27,17 @@ export const SiteEditor = ({
   const [communityData, setCommunityData] = useState<CommunityPageSettings>(initialCommunity);
   const [contributeData, setContributeData] = useState<ContributePageSettings>(initialContribute);
   
-  // New States (Initialized empty, will be filled by useEffect)
+  // New States
   const [brandingData, setBrandingData] = useState<BrandingSettings>({ siteName: '', logoText: '' });
   const [footerData, setFooterData] = useState<FooterSettings>({ text: '', copyright: '' });
   const [valuePropsData, setValuePropsData] = useState<ValuePropItem[]>([]);
   const [quickNavData, setQuickNavData] = useState<QuickNavItem[]>([]);
 
+  // Skill Input State
+  const [newSkill, setNewSkill] = useState('');
+
   const [saving, setSaving] = useState(false);
 
-  // Fetch new settings on mount since they aren't passed yet (or we can update Admin.tsx)
-  // Let's fetch them here to be self-contained for the new features if props aren't ready
   useEffect(() => {
     const fetchExtras = async () => {
       if (!supabase) return;
@@ -103,6 +97,23 @@ export const SiteEditor = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const addSkill = () => {
+    if (newSkill.trim()) {
+      setAboutData({
+        ...aboutData,
+        skills: [...(aboutData.skills || []), newSkill.trim()]
+      });
+      setNewSkill('');
+    }
+  };
+
+  const removeSkill = (skillToRemove: string) => {
+    setAboutData({
+      ...aboutData,
+      skills: aboutData.skills.filter(s => s !== skillToRemove)
+    });
   };
 
   const TabButton = ({ id, label, icon: Icon }: { id: any, label: string, icon: any }) => (
@@ -494,6 +505,45 @@ export const SiteEditor = ({
                   onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, email: e.target.value}})}
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
                 />
+              </div>
+            </div>
+
+            {/* Skills Manager */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Technical Arsenal (Skills)</h3>
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2 mb-4">
+                  <input 
+                    type="text" 
+                    value={newSkill}
+                    onChange={e => setNewSkill(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addSkill()}
+                    placeholder="Add a skill (e.g. React, Python, AWS)..."
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  />
+                  <button 
+                    onClick={addSkill}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {aboutData.skills?.map((skill, idx) => (
+                    <span key={idx} className="px-3 py-1.5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 group">
+                      {skill}
+                      <button onClick={() => removeSkill(skill)} className="text-gray-400 hover:text-red-500">
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                  {(!aboutData.skills || aboutData.skills.length === 0) && (
+                    <span className="text-gray-400 text-sm italic">No skills added yet.</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Note: Skills are automatically categorized on your profile page based on keywords (e.g., "React" goes to Frontend, "AWS" to Infrastructure).
+                </p>
               </div>
             </div>
           </div>
