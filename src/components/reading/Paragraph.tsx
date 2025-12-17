@@ -16,11 +16,12 @@ export const Paragraph: React.FC<ParagraphProps> = ({ children, className, id })
   const { fontSize } = useReadingPreferences();
 
   // Dynamic text sizing based on preferences
+  // Updated to match Tailwind Typography (prose) sizes
   const textSize = {
-    sm: 'text-base',
-    base: 'text-lg',
-    lg: 'text-xl',
-    xl: 'text-2xl'
+    sm: 'text-sm',
+    base: 'text-base',
+    lg: 'text-lg',
+    xl: 'text-xl'
   }[fontSize];
 
   const handleCopy = () => {
@@ -35,7 +36,7 @@ export const Paragraph: React.FC<ParagraphProps> = ({ children, className, id })
     if (id) {
       const url = `${window.location.origin}${window.location.pathname}#${id}`;
       navigator.clipboard.writeText(url);
-      setCopied(true); // Reuse copied state for visual feedback
+      setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };

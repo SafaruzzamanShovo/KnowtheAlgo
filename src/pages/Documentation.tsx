@@ -84,6 +84,10 @@ const DocumentationContent = () => {
 
   const isRichContent = typeof currentTopic?.content === 'string';
 
+  // Map preferences to valid Tailwind classes
+  const proseSize = fontSize === 'base' ? '' : `prose-${fontSize}`;
+  const leadingClass = `leading-${lineHeight}`;
+
   return (
     <div className={`flex min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 ${focusMode ? 'pt-0' : 'pt-16'}`}>
       <ScrollProgress />
@@ -247,7 +251,15 @@ const DocumentationContent = () => {
 
             <div className="space-y-2">
               {isRichContent ? (
-                 <div className={`prose prose-indigo dark:prose-invert max-w-none prose-${fontSize} leading-${lineHeight}`}>
+                 <div className={cn(
+                   "prose prose-indigo dark:prose-invert max-w-none",
+                   proseSize,
+                   leadingClass,
+                   // Force paragraph spacing if leading is loose
+                   lineHeight === 'loose' && "[&_p]:mb-8",
+                   lineHeight === 'relaxed' && "[&_p]:mb-6",
+                   "[&_*]:leading-inherit"
+                 )}>
                     <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} />
                  </div>
               ) : (

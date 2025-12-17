@@ -14,6 +14,7 @@ import { SectionDivider } from '../components/reading/SectionDivider';
 import { ReadingPreferencesProvider, useReadingPreferences } from '../context/ReadingPreferences';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
+import { cn } from '../lib/utils';
 
 export const CommunityPost = () => (
   <ReadingPreferencesProvider>
@@ -54,6 +55,10 @@ const CommunityPostContent = () => {
   if (!post) return <div className="min-h-screen flex items-center justify-center text-xl">Post not found</div>;
 
   const isHtml = post.content.trim().startsWith('<');
+
+  // Map preferences to valid Tailwind classes
+  const proseSize = fontSize === 'base' ? '' : `prose-${fontSize}`;
+  const leadingClass = `leading-${lineHeight}`;
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20 transition-colors duration-300">
@@ -119,7 +124,16 @@ const CommunityPostContent = () => {
             className="max-w-none"
           >
             {isHtml ? (
-               <div className={`prose prose-indigo dark:prose-invert max-w-none prose-${fontSize} leading-${lineHeight}`}>
+               <div className={cn(
+                 "prose prose-indigo dark:prose-invert max-w-none",
+                 proseSize,
+                 leadingClass,
+                 // Force paragraph spacing if leading is loose
+                 lineHeight === 'loose' && "[&_p]:mb-8",
+                 lineHeight === 'relaxed' && "[&_p]:mb-6",
+                 // Ensure direct children inherit leading
+                 "[&_*]:leading-inherit"
+               )}>
                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
                </div>
             ) : (
