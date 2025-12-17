@@ -3,7 +3,7 @@ import {
   Plus, Trash2, Edit2, ChevronRight, ChevronDown, 
   Save, X, Layers, FileText, FolderPlus,
   Maximize2, Minimize2, ArrowUp, ArrowDown, ExternalLink,
-  Users
+  Users, MoreVertical
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
@@ -25,6 +25,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [topicContent, setTopicContent] = useState<string | any[]>('');
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [editingModule, setEditingModule] = useState<Module | null>(null); // New: Module Editing State
   
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -178,6 +179,25 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     }
   };
 
+  // New: Handle Module Save
+  const handleSaveModule = async () => {
+    if (!editingModule || !supabase) return;
+
+    const { error } = await supabase
+      .from('modules')
+      .update({
+        title: editingModule.title
+      })
+      .eq('id', editingModule.id);
+
+    if (!error) {
+      setEditingModule(null);
+      onRefresh();
+    } else {
+      alert(`Error updating module: ${error.message}`);
+    }
+  };
+
   const handleAddModule = async (subjectId: string) => {
     if (!newItemTitle.trim() || !supabase) return;
     
@@ -288,7 +308,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     );
   }
 
-  // ... (Rest of the component remains the same, just rendering the list)
   return (
     <div className="space-y-4">
       {/* Add Subject Button */}
@@ -325,9 +344,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
               value={newItemIcon}
               onChange={e => setNewItemIcon(e.target.value)}
             />
-            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-medium">
-              Please use a valid Lucide icon name (e.g. "Code2", "Server", "Database") instead of emojis for better consistency.
-            </p>
           </div>
           <div className="flex gap-2 justify-end">
             <button onClick={() => setIsAddingSubject(false)} className="px-4 py-2 text-gray-500 hover:bg-gray-200 rounded-lg">Cancel</button>
@@ -475,7 +491,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                 .map((module, mIdx, sortedModules) => (
                 <div key={module.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                   <div className="flex items-center justify-between p-3 pl-4 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
                       {/* Module Reorder */}
                       <div className="flex flex-col gap-0.5">
                         <button 
@@ -494,27 +510,52 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpandedModule(expandedModule === module.id ? null : module.id)}>
-                        <Layers size={14} className="text-gray-400" />
-                        <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{module.title}</span>
-                      </div>
+                      {/* Module Edit Mode */}
+                      {editingModule?.id === module.id ? (
+                        <div className="flex-1 flex gap-2 items-center">
+                          <input 
+                            type="text"
+                            value={editingModule.title}
+                            onChange={e => setEditingModule({...editingModule, title: e.target.value})}
+                            className="flex-1 px-2 py-1 rounded border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-gray-900 text-sm font-bold"
+                            autoFocus
+                          />
+                          <button onClick={handleSaveModule} className="p-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700"><Save size={14} /></button>
+                          <button onClick={() => setEditingModule(null)} className="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded"><X size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => setExpandedModule(expandedModule === module.id ? null : module.id)}>
+                          <Layers size={14} className="text-gray-400" />
+                          <span className="font-medium text-sm text-gray-700 dark:text-gray-300">{module.title}</span>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <button 
-                        onClick={() => setAddingTopicTo(module.id)}
-                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded"
-                        title="Add Topic"
-                      >
-                        <Plus size={14} />
-                      </button>
-                      <button 
-                         onClick={() => handleDelete('modules', module.id)}
-                         className="p-1.5 text-gray-400 hover:text-red-500 rounded"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+                    {!editingModule && (
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => setAddingTopicTo(module.id)}
+                          className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded"
+                          title="Add Topic"
+                        >
+                          <Plus size={14} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingModule(module)}
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                          title="Rename Module"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button 
+                           onClick={() => handleDelete('modules', module.id)}
+                           className="p-1.5 text-gray-400 hover:text-red-500 rounded"
+                           title="Delete Module"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Topics List */}
@@ -575,7 +616,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                               onClick={() => handleEditTopic(topic)}
                               className="text-xs font-medium text-indigo-600 hover:underline flex items-center gap-1"
                             >
-                              <Edit2 size={10} /> Edit
+                              <Edit2 size={10} /> Edit Content
                             </button>
                             <div className="w-px h-3 bg-gray-300 dark:bg-gray-700"></div>
                             <button 

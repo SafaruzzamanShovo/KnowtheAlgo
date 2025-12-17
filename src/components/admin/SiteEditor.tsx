@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X, Github, Linkedin, BookOpen, Mail, Menu, Eye, EyeOff } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X, Github, Linkedin, BookOpen, Mail, Menu, Eye, EyeOff, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { 
   HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings,
@@ -188,6 +188,20 @@ export const SiteEditor = ({
                   className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
                   placeholder="e.g. PhD Candidate in CS | ML Researcher"
                 />
+              </div>
+            </div>
+
+            {/* Open to Work Toggle */}
+            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setAboutData({...aboutData, open_to_work: !aboutData.open_to_work})}
+                className={`text-2xl transition-colors ${aboutData.open_to_work ? 'text-green-500' : 'text-gray-400'}`}
+              >
+                {aboutData.open_to_work ? <ToggleRight size={32} /> : <ToggleLeft size={32} />}
+              </button>
+              <div>
+                <span className="font-bold text-gray-900 dark:text-white block">"Open to Work" Badge</span>
+                <span className="text-xs text-gray-500">Show a glowing badge on your profile image to indicate availability.</span>
               </div>
             </div>
 

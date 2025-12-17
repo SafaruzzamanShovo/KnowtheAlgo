@@ -89,6 +89,7 @@ export interface AboutSettings {
   image: string;
   skills: string[];
   resume_link?: string;
+  open_to_work?: boolean; // New field for badge toggle
   // New fields for automating the Collaborate/Landing page right card
   portfolio_card_title?: string;
   portfolio_card_desc?: string;

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Github, Globe, Terminal, Cpu, Command } from 'lucide-react';
+import { ArrowRight, Globe, Terminal, Briefcase } from 'lucide-react';
 import { AboutSettings } from '../../types';
 
 interface AcademicLandingProps {
@@ -8,44 +8,55 @@ interface AcademicLandingProps {
 }
 
 export const AcademicLanding: React.FC<AcademicLandingProps> = ({ settings }) => {
+  // Default to true if undefined for backward compatibility, or false if explicitly set
+  const showOpenToWork = settings.open_to_work !== false;
+
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-12 md:py-24 flex flex-col md:flex-row gap-6 items-stretch justify-center min-h-[80vh]">
       {/* LEFT CARD — PROFILE (Command Center Style) */}
       <SpotlightCard className="flex-[1.6] p-8 md:p-10 flex flex-col relative group">
         <div className="flex flex-col sm:flex-row gap-8 items-start relative z-10">
-          {/* Profile Image with Status Indicator */}
-          <div className="relative flex-shrink-0">
-            <div className="w-28 h-28 md:w-36 md:h-36 rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-2xl">
+          
+          {/* Profile Image with Open To Work Badge */}
+          <div className="relative flex-shrink-0 mx-auto sm:mx-0">
+            <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-900 group-hover:border-zinc-700 transition-colors duration-500">
               <img 
                 src={settings.image} 
                 alt={settings.name} 
-                className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500"
+                className="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 transition-all duration-500"
               />
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-zinc-900 p-1.5 rounded-full border border-zinc-800">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
-            </div>
+            {/* Open to Work Badge */}
+            {showOpenToWork && (
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20">
+                 <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)] border-[3px] border-zinc-900 whitespace-nowrap">
+                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                   Open to Work
+                 </span>
+              </div>
+            )}
           </div>
 
           {/* Content */}
-          <div className="flex-1 space-y-6">
+          <div className="flex-1 space-y-5 text-center sm:text-left mt-4 sm:mt-0">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-zinc-100 tracking-tight mb-2">
                 {settings.name}
               </h1>
-              <div className="flex items-center gap-2 text-zinc-400 text-sm font-medium uppercase tracking-wider">
+              <div className="flex items-center justify-center sm:justify-start gap-2 text-zinc-400 text-sm font-medium uppercase tracking-wider">
                 <Terminal size={14} className="text-indigo-500" />
                 {settings.role}
               </div>
             </div>
 
+            {/* Short Bio */}
             <div 
               className="prose prose-invert prose-sm text-zinc-400 leading-relaxed max-w-none"
               dangerouslySetInnerHTML={{ __html: settings.bio }}
             />
 
             {/* Tech Stack / Skills Chips */}
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap justify-center sm:justify-start gap-2 pt-2">
               {settings.skills.slice(0, 6).map((skill) => (
                 <span 
                   key={skill} 
