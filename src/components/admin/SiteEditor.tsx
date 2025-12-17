@@ -19,7 +19,7 @@ interface SiteEditorProps {
 export const SiteEditor = ({ 
   initialHome, initialAbout, initialCommunity, initialContribute, onRefresh 
 }: any) => {
-  const [activeSection, setActiveSection] = useState<'home' | 'about' | 'community' | 'contribute' | 'global'>('global');
+  const [activeSection, setActiveSection] = useState<'home' | 'about' | 'community' | 'contribute' | 'global'>('about');
   
   // State for all settings
   const [homeData, setHomeData] = useState<HomeSettings>(initialHome);
@@ -143,14 +143,184 @@ export const SiteEditor = ({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+        <TabButton id="about" label="Profile & CV" icon={User} />
         <TabButton id="global" label="Global" icon={Settings} />
         <TabButton id="home" label="Home" icon={Layout} />
-        <TabButton id="about" label="Profile" icon={User} />
         <TabButton id="community" label="Community" icon={Globe} />
         <TabButton id="contribute" label="Contribute" icon={PenTool} />
       </div>
 
       <div className="p-8">
+        {/* PROFILE SETTINGS */}
+        {activeSection === 'about' && (
+          <div className="space-y-8">
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-6">
+              <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
+                <User size={16} /> Academic Landing Page Configuration
+              </h4>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                This section controls the "Let's Collaborate" / About page. Keep the bio concise and academic.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={aboutData.name}
+                  onChange={e => setAboutData({...aboutData, name: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  placeholder="e.g. Dr. Jane Doe"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Academic Role / Field</label>
+                <input
+                  type="text"
+                  value={aboutData.role}
+                  onChange={e => setAboutData({...aboutData, role: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  placeholder="e.g. PhD Candidate in CS | ML Researcher"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Academic Bio (Left Card)</label>
+              <DualModeEditor
+                content={aboutData.bio}
+                onChange={val => setAboutData({...aboutData, bio: typeof val === 'string' ? val : ''})}
+                minHeight="200px"
+              />
+              <p className="text-xs text-gray-500 mt-2">Write a short, formal introduction. Focus on your field of study, research interests, and ambition.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Profile Image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={aboutData.image}
+                    onChange={e => setAboutData({...aboutData, image: e.target.value})}
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                    placeholder="https://..."
+                  />
+                  {aboutData.image && <img src={aboutData.image} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-gray-200" />}
+                </div>
+              </div>
+               <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">CV Link (Right Card)</label>
+                <input
+                  type="text"
+                  value={aboutData.resume_link || ''}
+                  onChange={e => setAboutData({...aboutData, resume_link: e.target.value})}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                  placeholder="https://username.github.io/cv"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Direct link to your GitHub Pages CV or PDF.</p>
+              </div>
+            </div>
+
+            {/* Social Presence Section */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Social Presence</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Mail size={12} /> Email (mailto:)</label>
+                  <input
+                    type="text"
+                    value={aboutData.socials?.email || ''}
+                    onChange={e => setAboutData({
+                      ...aboutData, 
+                      socials: { ...aboutData.socials, email: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
+                    placeholder="mailto:you@example.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Github size={12} /> GitHub URL</label>
+                  <input
+                    type="text"
+                    value={aboutData.socials?.github || ''}
+                    onChange={e => setAboutData({
+                      ...aboutData, 
+                      socials: { ...aboutData.socials, github: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Linkedin size={12} /> LinkedIn URL</label>
+                  <input
+                    type="text"
+                    value={aboutData.socials?.linkedin || ''}
+                    onChange={e => setAboutData({
+                      ...aboutData, 
+                      socials: { ...aboutData.socials, linkedin: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><BookOpen size={12} /> Google Scholar URL</label>
+                  <input
+                    type="text"
+                    value={aboutData.socials?.scholar || ''}
+                    onChange={e => setAboutData({
+                      ...aboutData, 
+                      socials: { ...aboutData.socials, scholar: e.target.value }
+                    })}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900"
+                    placeholder="https://scholar.google.com/..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Skills Manager */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Research Interests (Tags)</h3>
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2 mb-4">
+                  <input 
+                    type="text" 
+                    value={newSkill}
+                    onChange={e => setNewSkill(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addSkill()}
+                    placeholder="Add interest (e.g. Machine Learning, Computer Vision)..."
+                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  />
+                  <button 
+                    onClick={addSkill}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
+                  >
+                    Add
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {aboutData.skills?.map((skill, idx) => (
+                    <span key={idx} className="px-3 py-1.5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 group">
+                      {skill}
+                      <button onClick={() => removeSkill(skill)} className="text-gray-400 hover:text-red-500">
+                        <X size={14} />
+                      </button>
+                    </span>
+                  ))}
+                  {(!aboutData.skills || aboutData.skills.length === 0) && (
+                    <span className="text-gray-400 text-sm italic">No interests added yet.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ... Rest of the component (Global, Home, Community, Contribute) ... */}
         {/* GLOBAL SETTINGS */}
         {activeSection === 'global' && (
           <div className="space-y-8">
@@ -448,170 +618,6 @@ export const SiteEditor = ({
                     minHeight="150px"
                   />
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PROFILE SETTINGS */}
-        {activeSection === 'about' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Profile Configuration</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
-                <input
-                  type="text"
-                  value={aboutData.name}
-                  onChange={e => setAboutData({...aboutData, name: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Title / Role</label>
-                <input
-                  type="text"
-                  value={aboutData.role}
-                  onChange={e => setAboutData({...aboutData, role: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bio</label>
-              <DualModeEditor
-                content={aboutData.bio}
-                onChange={val => setAboutData({...aboutData, bio: typeof val === 'string' ? val : ''})}
-                minHeight="200px"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Image URL</label>
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={aboutData.image}
-                  onChange={e => setAboutData({...aboutData, image: e.target.value})}
-                  className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                />
-                <img src={aboutData.image} alt="Preview" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Resume Link</label>
-                <input
-                  type="text"
-                  value={aboutData.resume_link || ''}
-                  onChange={e => setAboutData({...aboutData, resume_link: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
-                  <Mail size={16} /> Email
-                </label>
-                <input
-                  type="text"
-                  value={aboutData.socials?.email || ''}
-                  onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, email: e.target.value}})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                />
-              </div>
-            </div>
-
-            {/* Social Links */}
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
-               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Social Media Links</h3>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
-                      <Github size={14} /> GitHub
-                    </label>
-                    <input
-                      type="text"
-                      value={aboutData.socials?.github || ''}
-                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, github: e.target.value}})}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
-                      <Linkedin size={14} /> LinkedIn
-                    </label>
-                    <input
-                      type="text"
-                      value={aboutData.socials?.linkedin || ''}
-                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, linkedin: e.target.value}})}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1">
-                      <BookOpen size={14} /> Scholar
-                    </label>
-                    <input
-                      type="text"
-                      value={aboutData.socials?.scholar || ''}
-                      onChange={e => setAboutData({...aboutData, socials: {...aboutData.socials, scholar: e.target.value}})}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
-                    />
-                  </div>
-               </div>
-            </div>
-
-            {/* AI Summary Editor */}
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">AI Profile Summary</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                This summary appears at the top of your portfolio in "Recruiter Mode". You can manually edit it here.
-              </p>
-              <textarea
-                value={aiSummary}
-                onChange={e => setAiSummary(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm leading-relaxed"
-                placeholder="Generated summary will appear here..."
-              />
-            </div>
-
-            {/* Skills Manager */}
-            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Technical Arsenal (Skills)</h3>
-              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex gap-2 mb-4">
-                  <input 
-                    type="text" 
-                    value={newSkill}
-                    onChange={e => setNewSkill(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && addSkill()}
-                    placeholder="Add a skill (e.g. React, Python, AWS)..."
-                    className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
-                  />
-                  <button 
-                    onClick={addSkill}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {aboutData.skills?.map((skill, idx) => (
-                    <span key={idx} className="px-3 py-1.5 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium flex items-center gap-2 group">
-                      {skill}
-                      <button onClick={() => removeSkill(skill)} className="text-gray-400 hover:text-red-500">
-                        <X size={14} />
-                      </button>
-                    </span>
-                  ))}
-                  {(!aboutData.skills || aboutData.skills.length === 0) && (
-                    <span className="text-gray-400 text-sm italic">No skills added yet.</span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  Note: Skills are automatically categorized on your profile page based on keywords (e.g., "React" goes to Frontend, "AWS" to Infrastructure).
-                </p>
               </div>
             </div>
           </div>
