@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -6,10 +6,10 @@ import { useSiteSettings } from '../hooks/useSiteSettings';
 import { DualModeEditor } from '../components/DualModeEditor';
 
 export const Contribute = () => {
-  const { contributeSettings } = useSiteSettings();
+  const { contributeSettings, categories } = useSiteSettings();
   const [formData, setFormData] = useState({
     title: '',
-    subject: 'Web Development',
+    subject: '',
     author: '',
     email: '',
     avatar: '',
@@ -18,6 +18,13 @@ export const Contribute = () => {
   });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Set default subject when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !formData.subject) {
+      setFormData(prev => ({ ...prev, subject: categories[0].title }));
+    }
+  }, [categories]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +41,7 @@ export const Contribute = () => {
         const { error } = await supabase.from('community_posts').insert([
           {
             title: formData.title,
-            category: formData.subject,
+            category: formData.subject || 'General',
             author_name: formData.author,
             author_email: formData.email,
             author_avatar: formData.avatar,
@@ -115,10 +122,18 @@ export const Contribute = () => {
                   onChange={(e) => setFormData({...formData, subject: e.target.value})}
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="Web Development">Web Development</option>
-                  <option value="Algorithms">Algorithms</option>
-                  <option value="System Design">System Design</option>
-                  <option value="DevOps">DevOps</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.title}>{cat.title}</option>
+                  ))}
+                  {/* Fallback options if categories fail to load or for legacy support */}
+                  {!categories.length && (
+                    <>
+                      <option value="Web Development">Web Development</option>
+                      <option value="Algorithms">Algorithms</option>
+                      <option value="System Design">System Design</option>
+                      <option value="DevOps">DevOps</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>

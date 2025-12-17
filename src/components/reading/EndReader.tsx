@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle2, ArrowRight, Share2, Bookmark } from 'lucide-react';
+import { CheckCircle2, ArrowRight, Share2, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface EndReaderProps {
@@ -12,6 +12,33 @@ interface EndReaderProps {
 }
 
 export const EndReader: React.FC<EndReaderProps> = ({ nextTopic }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: document.title,
+      text: 'Check out this topic on KnowtheAlgo',
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error('Error sharing:', err);
+      }
+    } else {
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 40 }}
@@ -27,11 +54,12 @@ export const EndReader: React.FC<EndReaderProps> = ({ nextTopic }) => {
         <p className="text-gray-500 dark:text-gray-400">Great job! You've completed this section.</p>
         
         <div className="flex gap-4 mt-8">
-          <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <Bookmark size={18} /> Save for later
-          </button>
-          <button className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <Share2 size={18} /> Share
+          <button 
+            onClick={handleShare}
+            className="flex items-center gap-2 px-8 py-3 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+          >
+            {copied ? <Check size={18} /> : <Share2 size={18} />}
+            {copied ? 'Link Copied!' : 'Share Topic'}
           </button>
         </div>
       </div>

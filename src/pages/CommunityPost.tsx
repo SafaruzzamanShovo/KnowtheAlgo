@@ -56,9 +56,21 @@ const CommunityPostContent = () => {
 
   const isHtml = post.content.trim().startsWith('<');
 
-  // Map preferences to valid Tailwind classes
-  const proseSize = fontSize === 'base' ? '' : `prose-${fontSize}`;
-  const leadingClass = `leading-${lineHeight}`;
+  // Explicit map to ensure Tailwind generates these classes
+  const proseSizes = {
+    sm: 'prose-sm',
+    base: 'prose-base',
+    lg: 'prose-lg',
+    xl: 'prose-xl'
+  };
+  const proseSize = proseSizes[fontSize];
+  
+  // Force line-heights for all children elements using !important
+  const leadingClass = {
+    'normal': '[&_*]:!leading-normal',
+    'relaxed': '[&_*]:!leading-relaxed',
+    'loose': '[&_*]:!leading-loose'
+  }[lineHeight];
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20 transition-colors duration-300">
@@ -125,14 +137,12 @@ const CommunityPostContent = () => {
           >
             {isHtml ? (
                <div className={cn(
-                 "prose prose-indigo dark:prose-invert max-w-none",
+                 "prose dark:prose-invert max-w-none transition-all duration-300",
                  proseSize,
                  leadingClass,
-                 // Force paragraph spacing if leading is loose
+                 // Extra spacing for loose mode
                  lineHeight === 'loose' && "[&_p]:mb-8",
-                 lineHeight === 'relaxed' && "[&_p]:mb-6",
-                 // Ensure direct children inherit leading
-                 "[&_*]:leading-inherit"
+                 lineHeight === 'relaxed' && "[&_p]:mb-6"
                )}>
                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
                </div>
@@ -150,8 +160,8 @@ const CommunityPostContent = () => {
                       </code>
                     )
                   },
-                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-12 mb-6" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-12 mb-6 border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-3" {...props}><span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>{props.children}</h2>,
+                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold mt-12 mb-6 text-gray-900 dark:text-white" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold mt-12 mb-6 border-b border-gray-100 dark:border-gray-800 pb-2 flex items-center gap-3 text-gray-900 dark:text-white" {...props}><span className="w-1.5 h-6 bg-indigo-500 rounded-full"></span>{props.children}</h2>,
                   blockquote: ({node, ...props}) => <div className="border-l-4 border-indigo-500 pl-4 py-2 my-6 bg-gray-50 dark:bg-gray-900/50 italic text-gray-600 dark:text-gray-300 rounded-r-lg" {...props} />,
                   p: ({node, ...props}) => <Paragraph {...props} />,
                   img: ({node, ...props}) => <SmartImage src={props.src || ''} alt={props.alt || ''} caption={props.title} />,

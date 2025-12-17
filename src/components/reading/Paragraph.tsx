@@ -13,16 +13,22 @@ interface ParagraphProps {
 export const Paragraph: React.FC<ParagraphProps> = ({ children, className, id }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [copied, setCopied] = useState(false);
-  const { fontSize } = useReadingPreferences();
+  const { fontSize, lineHeight } = useReadingPreferences();
 
   // Dynamic text sizing based on preferences
-  // Updated to match Tailwind Typography (prose) sizes
   const textSize = {
     sm: 'text-sm',
     base: 'text-base',
     lg: 'text-lg',
     xl: 'text-xl'
   }[fontSize];
+
+  // Dynamic line height
+  const leadingClass = {
+    'normal': 'leading-normal',
+    'relaxed': 'leading-relaxed',
+    'loose': 'leading-loose'
+  }[lineHeight];
 
   const handleCopy = () => {
     if (typeof children === 'string') {
@@ -76,8 +82,11 @@ export const Paragraph: React.FC<ParagraphProps> = ({ children, className, id })
       </div>
 
       <p className={cn(
-        "text-gray-700 dark:text-gray-300 leading-relaxed font-serif-reading transition-colors duration-300",
+        "text-gray-700 dark:text-gray-300 font-serif-reading transition-all duration-300",
         textSize,
+        leadingClass,
+        // Add extra bottom margin for loose spacing to improve readability
+        lineHeight === 'loose' && "mb-8",
         className
       )}>
         {children}

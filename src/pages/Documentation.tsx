@@ -84,9 +84,21 @@ const DocumentationContent = () => {
 
   const isRichContent = typeof currentTopic?.content === 'string';
 
-  // Map preferences to valid Tailwind classes
-  const proseSize = fontSize === 'base' ? '' : `prose-${fontSize}`;
-  const leadingClass = `leading-${lineHeight}`;
+  // Explicit map to ensure Tailwind generates these classes
+  const proseSizes = {
+    sm: 'prose-sm',
+    base: 'prose-base',
+    lg: 'prose-lg',
+    xl: 'prose-xl'
+  };
+  const proseSize = proseSizes[fontSize];
+  
+  // Force line-heights for all children elements using !important to override defaults/inline styles
+  const leadingClass = {
+    'normal': '[&_*]:!leading-normal',
+    'relaxed': '[&_*]:!leading-relaxed',
+    'loose': '[&_*]:!leading-loose'
+  }[lineHeight];
 
   return (
     <div className={`flex min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300 ${focusMode ? 'pt-0' : 'pt-16'}`}>
@@ -252,13 +264,12 @@ const DocumentationContent = () => {
             <div className="space-y-2">
               {isRichContent ? (
                  <div className={cn(
-                   "prose prose-indigo dark:prose-invert max-w-none",
+                   "prose dark:prose-invert max-w-none transition-all duration-300",
                    proseSize,
                    leadingClass,
                    // Force paragraph spacing if leading is loose
                    lineHeight === 'loose' && "[&_p]:mb-8",
-                   lineHeight === 'relaxed' && "[&_p]:mb-6",
-                   "[&_*]:leading-inherit"
+                   lineHeight === 'relaxed' && "[&_p]:mb-6"
                  )}>
                     <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} />
                  </div>
