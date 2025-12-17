@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Globe, Terminal, Briefcase } from 'lucide-react';
+import { ArrowRight, Globe, Terminal, Briefcase, FileText, Github, Download, Mail, Linkedin } from 'lucide-react';
 import { AboutSettings } from '../../types';
 
 interface AcademicLandingProps {
@@ -17,28 +17,81 @@ export const AcademicLanding: React.FC<AcademicLandingProps> = ({ settings }) =>
       <SpotlightCard className="flex-[1.6] p-8 md:p-10 flex flex-col relative group">
         <div className="flex flex-col sm:flex-row gap-8 items-start relative z-10">
           
-          {/* Profile Image with Open To Work Badge */}
-          <div className="relative flex-shrink-0 mx-auto sm:mx-0">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-900 group-hover:border-zinc-700 transition-colors duration-500">
-              <img 
-                src={settings.image} 
-                alt={settings.name} 
-                className="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 transition-all duration-500"
-              />
-            </div>
-            {/* Open to Work Badge */}
-            {showOpenToWork && (
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20">
-                 <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)] border-[3px] border-zinc-900 whitespace-nowrap">
-                   <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                   Open to Work
-                 </span>
+          {/* Profile Column (Image + Actions) */}
+          <div className="flex flex-col items-center sm:items-center gap-5 flex-shrink-0 mx-auto sm:mx-0">
+            {/* Image Container */}
+            <div className="relative">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-2xl overflow-hidden border-2 border-zinc-800 shadow-2xl bg-zinc-900 group-hover:border-zinc-700 transition-colors duration-500">
+                <img 
+                  src={settings.image} 
+                  alt={settings.name} 
+                  className="w-full h-full object-cover grayscale-[10%] group-hover:grayscale-0 transition-all duration-500"
+                />
               </div>
-            )}
+              {/* Open to Work Badge */}
+              {showOpenToWork && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-20">
+                   <span className="flex items-center gap-1.5 px-3 py-1 bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-[0_0_15px_rgba(16,185,129,0.4)] border-[3px] border-zinc-900 whitespace-nowrap">
+                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                     Open to Work
+                   </span>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Actions Grid (CV, Git, Mail, LinkedIn) */}
+            <div className="grid grid-cols-2 gap-2 w-full max-w-[180px]">
+              {settings.resume_link && (
+                <a 
+                  href={settings.resume_link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm"
+                  title="Download CV / Resume"
+                >
+                  <FileText size={14} /> 
+                  <span>CV</span>
+                </a>
+              )}
+              {settings.socials?.github && (
+                <a 
+                  href={settings.socials.github}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm"
+                  title="GitHub Profile"
+                >
+                  <Github size={14} />
+                  <span>Git</span>
+                </a>
+              )}
+              {settings.socials?.email && (
+                <a 
+                  href={settings.socials.email.startsWith('mailto:') ? settings.socials.email : `mailto:${settings.socials.email}`}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm"
+                  title="Send Email"
+                >
+                  <Mail size={14} />
+                  <span>Mail</span>
+                </a>
+              )}
+              {settings.socials?.linkedin && (
+                <a 
+                  href={settings.socials.linkedin}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-zinc-600 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-all shadow-sm"
+                  title="LinkedIn Profile"
+                >
+                  <Linkedin size={14} />
+                  <span>In</span>
+                </a>
+              )}
+            </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 space-y-5 text-center sm:text-left mt-4 sm:mt-0">
+          <div className="flex-1 space-y-5 text-center sm:text-left mt-2 sm:mt-0">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-zinc-100 tracking-tight mb-2">
                 {settings.name}

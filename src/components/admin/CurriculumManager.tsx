@@ -3,7 +3,7 @@ import {
   Plus, Trash2, Edit2, ChevronRight, ChevronDown, 
   Save, X, Layers, FileText, FolderPlus,
   Maximize2, Minimize2, ArrowUp, ArrowDown, ExternalLink,
-  Users, MoreVertical
+  Users, MoreVertical, Check
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
@@ -24,8 +24,10 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   // Editing States
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [topicContent, setTopicContent] = useState<string | any[]>('');
+  const [topicTitle, setTopicTitle] = useState(''); // New: State for editing topic title
+  
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
-  const [editingModule, setEditingModule] = useState<Module | null>(null); // New: Module Editing State
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
   
   const [isFullScreen, setIsFullScreen] = useState(false);
 
@@ -58,6 +60,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     await supabase
       .from('topics')
       .update({ 
+        title: topicTitle, // Save title as well
         content: content,
         read_time: readTime
       })
@@ -65,6 +68,13 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   };
 
   const saveStatus = useAutoSave(topicContent, saveTopicToDb, 3000);
+
+  // Manual save handler
+  const handleManualSave = async () => {
+    await saveTopicToDb(topicContent);
+    alert('Topic saved successfully!');
+    onRefresh(); // Refresh list to update titles if changed
+  };
 
   // --- Real-time Presence ---
   useEffect(() => {
@@ -179,7 +189,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     }
   };
 
-  // New: Handle Module Save
   const handleSaveModule = async () => {
     if (!editingModule || !supabase) return;
 
@@ -226,7 +235,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     if (!newItemTitle.trim() || !supabase) return;
 
     const id = slugify(newItemTitle);
-    // Find current max order in this module
     let maxOrder = 0;
     subjects.forEach(s => {
       const m = s.modules.find(mod => mod.id === moduleId);
@@ -256,6 +264,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const handleEditTopic = (topic: Topic) => {
     setEditingTopic(topic);
     setTopicContent(topic.content);
+    setTopicTitle(topic.title);
   };
 
   // --- Render ---
@@ -266,20 +275,32 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
         "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col transition-all duration-300",
         isFullScreen ? "fixed inset-0 z-50 rounded-none h-screen w-screen p-6" : "p-6 h-[85vh]"
       )}>
-        <div className="flex items-center justify-between mb-4 flex-shrink-0">
-          <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              Editing: {editingTopic.title}
-            </h3>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
-              {activeUsers > 1 && (
-                <span className="flex items-center gap-1 text-indigo-600 font-bold animate-pulse">
-                  <Users size={12} /> {activeUsers} people viewing
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 flex-shrink-0 gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+               <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Editing Topic</span>
+               {activeUsers > 1 && (
+                <span className="flex items-center gap-1 text-xs text-indigo-600 font-bold animate-pulse ml-2">
+                  <Users size={12} /> {activeUsers} viewing
                 </span>
               )}
             </div>
+            <input 
+              type="text" 
+              value={topicTitle}
+              onChange={(e) => setTopicTitle(e.target.value)}
+              className="text-xl font-bold text-gray-900 dark:text-white bg-transparent border-b border-transparent hover:border-gray-300 dark:hover:border-gray-700 focus:border-indigo-500 focus:outline-none w-full transition-colors"
+              placeholder="Topic Title"
+            />
           </div>
+          
           <div className="flex gap-2">
+            <button 
+              onClick={handleManualSave}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors shadow-lg shadow-indigo-500/20"
+            >
+              <Save size={16} /> Save
+            </button>
             <button 
               onClick={() => setIsFullScreen(!isFullScreen)}
               className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
@@ -298,7 +319,7 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
         <div className="flex-1 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col shadow-inner bg-gray-50 dark:bg-gray-950/50">
           <DualModeEditor 
-            key={editingTopic.id} // CRITICAL FIX: Force remount when switching topics
+            key={editingTopic.id} // CRITICAL: Force remount when switching topics
             content={topicContent} 
             onChange={setTopicContent} 
             saveStatus={saveStatus}
