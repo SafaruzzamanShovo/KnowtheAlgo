@@ -10,16 +10,23 @@ export default defineConfig({
     minify: 'esbuild',
     rollupOptions: {
       output: {
-        // Split large dependencies into separate chunks for better caching and loading
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-libs': ['framer-motion', 'lucide-react'],
-          'editor-libs': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-image', '@tiptap/extension-link'],
+          // Tiptap dependencies grouped together
+          'editor-libs': [
+            '@tiptap/react', 
+            '@tiptap/starter-kit', 
+            '@tiptap/extension-image', 
+            '@tiptap/extension-link',
+            '@tiptap/extension-youtube',
+            '@tiptap/extension-table',
+            '@tiptap/extension-code-block-lowlight'
+          ],
         },
       },
     },
   },
-  // Optimize deps to prevent dev server clogging
   optimizeDeps: {
     include: ['lucide-react'],
   },

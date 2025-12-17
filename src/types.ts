@@ -174,3 +174,15 @@ export interface PortfolioItem {
   };
   display_order?: number;
 }
+
+// Supabase Database Types (Merged from old index.ts)
+export interface DatabasePost {
+  id: string;
+  created_at: string;
+  title: string;
+  content: string; // Markdown content
+  subject_id: string;
+  module_id: string;
+  author_id: string;
+  status: 'draft' | 'published';
+}
