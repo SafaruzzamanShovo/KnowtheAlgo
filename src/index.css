@@ -5,7 +5,8 @@
 /* Tiptap Editor Styles */
 .ProseMirror {
   outline: none;
-  min-height: 200px;
+  min-height: 400px;
+  padding-bottom: 2rem;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -16,189 +17,139 @@
   pointer-events: none;
 }
 
-/* Ensure lists inside Tiptap have proper styling */
-.ProseMirror ul {
-  list-style-type: disc;
-  padding-left: 1.5em;
-  margin: 1em 0;
+/* Page View Style for Editor */
+.editor-page {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-height: 800px;
+  background-color: white;
+  margin: 2rem auto;
+  padding: 3rem;
+  max-width: 850px; /* A4-ish width */
 }
 
-.ProseMirror ol {
-  list-style-type: decimal;
-  padding-left: 1.5em;
-  margin: 1em 0;
+.dark .editor-page {
+  background-color: #1f2937; /* gray-800 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  color: #f3f4f6;
 }
 
-.ProseMirror h1 {
-  font-size: 2em;
-  font-weight: bold;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.ProseMirror h2 {
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.ProseMirror pre {
-  background: #0d0d0d;
-  color: #fff;
-  font-family: 'JetBrainsMono', monospace;
-  padding: 0.75rem 1rem;
+/* Floating Menu & Bubble Menu Styles */
+.tiptap-menu {
+  background-color: white;
+  border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
-  margin: 1rem 0;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
 }
 
-.ProseMirror code {
-  background-color: rgba(97, 97, 97, 0.1);
-  color: #616161;
-  padding: 0.25em;
-  border-radius: 0.25em;
+.dark .tiptap-menu {
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
-.dark .ProseMirror code {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
+/* --- Code Block Lowlight (Syntax Highlighting) --- */
+pre {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'JetBrainsMono', 'Fira Code', monospace;
+  padding: 1rem 1.5rem;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid #333;
+  overflow-x: auto;
 }
+
+pre code {
+  color: inherit;
+  padding: 0;
+  background: none;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+/* Syntax Highlighting Colors (VS Code Dark) */
+.hljs-comment,
+.hljs-quote { color: #6a9955; font-style: italic; }
+.hljs-doctag, .hljs-keyword, .hljs-formula { color: #c586c0; }
+.hljs-section, .hljs-name, .hljs-selector-tag, .hljs-deletion, .hljs-subst { color: #569cd6; }
+.hljs-literal { color: #569cd6; }
+.hljs-string, .hljs-regexp, .hljs-addition, .hljs-attribute, .hljs-meta-string { color: #ce9178; }
+.hljs-built_in, .hljs-class .hljs-title { color: #4ec9b0; }
+.hljs-attr, .hljs-variable, .hljs-template-variable, .hljs-type, .hljs-selector-class, .hljs-selector-attr, .hljs-selector-pseudo, .hljs-number { color: #b5cea8; }
+.hljs-symbol, .hljs-bullet, .hljs-link, .hljs-meta, .hljs-selector-id, .hljs-title { color: #dcdcaa; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
+.hljs-link { text-decoration: underline; }
+
+/* Inline Code */
+.ProseMirror code:not(pre code) {
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+  padding: 0.2em 0.4em;
+  border-radius: 0.3em;
+  font-size: 0.875em;
+  font-weight: 500;
+  font-family: monospace;
+}
+
+.dark .ProseMirror code:not(pre code) {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
+
+/* --- Typography Overrides --- */
+.ProseMirror ul { list-style-type: disc; padding-left: 1.5em; margin: 1em 0; }
+.ProseMirror ol { list-style-type: decimal; padding-left: 1.5em; margin: 1em 0; }
+
+.ProseMirror h1 { font-size: 2.25em; font-weight: 800; margin-top: 1em; margin-bottom: 0.5em; line-height: 1.1; color: #111827; }
+.dark .ProseMirror h1 { color: #f3f4f6; }
+
+.ProseMirror h2 { font-size: 1.75em; font-weight: 700; margin-top: 1em; margin-bottom: 0.5em; padding-bottom: 0.3em; border-bottom: 1px solid #e5e7eb; color: #1f2937; }
+.dark .ProseMirror h2 { color: #e5e7eb; border-color: #374151; }
+
+.ProseMirror h3 { font-size: 1.5em; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; }
+.ProseMirror h4 { font-size: 1.25em; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; }
+.ProseMirror h5 { font-size: 1.1em; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; }
+.ProseMirror h6 { font-size: 1em; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; text-transform: uppercase; letter-spacing: 0.05em; }
 
 .ProseMirror blockquote {
-  border-left: 3px solid #e2e8f0;
+  border-left: 4px solid #6366f1;
   padding-left: 1rem;
   margin-left: 0;
   margin-right: 0;
   font-style: italic;
+  color: #4b5563;
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0 0.5rem 0.5rem 0;
 }
 
 .dark .ProseMirror blockquote {
-  border-left-color: #475569;
+  border-left-color: #818cf8;
+  color: #9ca3af;
+  background: #111827;
 }
 
-/* --- Table Styles --- */
-.ProseMirror table {
-  border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
-  margin: 0;
-  overflow: hidden;
+/* --- Dark Mode Force Overrides for Reading View --- */
+.dark .prose {
+  color: #e5e7eb !important;
 }
+.dark .prose strong { color: #f3f4f6 !important; }
+.dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4 { color: #f9fafb !important; }
+.dark .prose a { color: #818cf8 !important; }
+.dark .prose code { color: #e5e7eb !important; }
+.dark .prose blockquote { color: #d1d5db !important; }
 
-.ProseMirror td,
-.ProseMirror th {
-  min-width: 1em;
-  border: 1px solid #ced4da;
-  padding: 8px 10px;
-  vertical-align: top;
-  box-sizing: border-box;
-  position: relative;
+/* YouTube Embeds */
+div[data-youtube-video] {
+  cursor: move;
+  padding-right: 24px;
 }
-
-.dark .ProseMirror td,
-.dark .ProseMirror th {
-  border-color: #374151;
-}
-
-.ProseMirror th {
-  font-weight: bold;
-  text-align: left;
-  background-color: #f8f9fa;
-}
-
-.dark .ProseMirror th {
-  background-color: #1f2937;
-}
-
-.ProseMirror .selectedCell:after {
-  z-index: 2;
-  position: absolute;
-  content: "";
-  left: 0; right: 0; top: 0; bottom: 0;
-  background: rgba(200, 200, 255, 0.4);
-  pointer-events: none;
-}
-
-.ProseMirror .column-resize-handle {
-  position: absolute;
-  right: -2px;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background-color: #adf;
-  pointer-events: none;
-}
-
-/* --- Task List Styles --- */
-ul[data-type="taskList"] {
-  list-style: none;
-  padding: 0;
-}
-
-ul[data-type="taskList"] li {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-ul[data-type="taskList"] li > label {
-  margin-right: 0.5rem;
-  user-select: none;
-  display: flex;
-  align-items: center;
-}
-
-ul[data-type="taskList"] li > label input[type="checkbox"] {
-  width: 1.1em;
-  height: 1.1em;
-  cursor: pointer;
-  border-radius: 4px;
-  border: 2px solid #cbd5e1;
-  appearance: none;
-  background-color: white;
-  position: relative;
-}
-
-ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
-  background-color: #4f46e5;
-  border-color: #4f46e5;
-}
-
-ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 0px;
-  width: 5px;
-  height: 10px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-
-.dark ul[data-type="taskList"] li > label input[type="checkbox"] {
-  background-color: #1f2937;
-  border-color: #4b5563;
-}
-
-.dark ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
-  background-color: #6366f1;
-  border-color: #6366f1;
-}
-
-ul[data-type="taskList"] li > div {
-  flex: 1;
-}
-
-/* --- Highlight Styles --- */
-mark {
-  background-color: #fef08a; /* yellow-200 */
-  color: inherit;
-  padding: 0.1em 0.2em;
-  border-radius: 0.2em;
-}
-
-.dark mark {
-  background-color: #854d0e; /* yellow-800 */
-  color: #fef9c3;
+iframe {
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
 }

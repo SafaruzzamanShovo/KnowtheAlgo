@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Edit2, Trash2, ArrowUp, ArrowDown, CheckCircle, XCircle, 
-  MessageSquare, Save, X, Eye, ExternalLink 
+  MessageSquare, Save, X, Eye, ExternalLink, Users
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { CommunityPost } from '../../types';
 import { DualModeEditor } from '../DualModeEditor';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
+import { useAutoSave } from '../../hooks/useAutoSave';
 
 interface CommunityManagerProps {
   posts: CommunityPost[];
@@ -16,7 +17,7 @@ interface CommunityManagerProps {
 
 export const CommunityManager: React.FC<CommunityManagerProps> = ({ posts, onRefresh }) => {
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [activeUsers, setActiveUsers] = useState<number>(0);
 
   const handleMove = async (index: number, direction: 'up' | 'down') => {
     if (!supabase) return;
@@ -59,87 +60,115 @@ export const CommunityManager: React.FC<CommunityManagerProps> = ({ posts, onRef
     else onRefresh();
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingPost || !supabase) return;
-    setIsSaving(true);
+  // --- Auto Save Logic ---
+  const savePostToDb = async (post: CommunityPost) => {
+    if (!supabase) return;
 
-    const { error } = await supabase
+    await supabase
       .from('community_posts')
       .update({
-        title: editingPost.title,
-        content: editingPost.content,
-        category: editingPost.category,
-        tags: editingPost.tags
+        title: post.title,
+        content: post.content,
+        category: post.category,
+        tags: post.tags
       })
-      .eq('id', editingPost.id);
-
-    setIsSaving(false);
-    if (error) {
-      alert(`Error updating post: ${error.message}`);
-    } else {
-      setEditingPost(null);
-      onRefresh();
-    }
+      .eq('id', post.id);
   };
+
+  const saveStatus = useAutoSave(editingPost, async (data) => {
+    if (data) await savePostToDb(data);
+  }, 3000);
+
+  // --- Real-time Presence ---
+  useEffect(() => {
+    if (!supabase || !editingPost) return;
+
+    const channel = supabase.channel(`post:${editingPost.id}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setActiveUsers(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user: 'admin', online_at: new Date().toISOString() });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [editingPost]);
 
   if (editingPost) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-lg">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Post</h3>
-          <button onClick={() => setEditingPost(null)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">Edit Post</h3>
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+              {activeUsers > 1 && (
+                <span className="flex items-center gap-1 text-indigo-600 font-bold animate-pulse">
+                  <Users size={12} /> {activeUsers} admins viewing
+                </span>
+              )}
+            </div>
+          </div>
+          <button onClick={() => { setEditingPost(null); onRefresh(); }} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
             <X size={20} />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Title</label>
             <input 
               type="text" 
               value={editingPost.title}
               onChange={e => setEditingPost({...editingPost, title: e.target.value})}
-              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-lg font-medium"
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Category</label>
               <input 
                 type="text" 
                 value={editingPost.category}
                 onChange={e => setEditingPost({...editingPost, category: e.target.value})}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (comma sep)</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Tags (comma sep)</label>
               <input 
                 type="text" 
                 value={editingPost.tags?.join(', ')}
                 onChange={e => setEditingPost({...editingPost, tags: e.target.value.split(',').map(t => t.trim())})}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
-            <DualModeEditor 
-              content={editingPost.content}
-              onChange={val => setEditingPost({...editingPost, content: typeof val === 'string' ? val : ''})}
-              minHeight="400px"
-            />
+            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Content</label>
+            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+              <DualModeEditor 
+                key={editingPost.id} // CRITICAL FIX: Force remount when switching posts
+                content={editingPost.content}
+                onChange={val => setEditingPost({...editingPost, content: typeof val === 'string' ? val : ''})}
+                minHeight="500px"
+                saveStatus={saveStatus}
+              />
+            </div>
           </div>
 
           <div className="flex justify-end pt-4">
             <button 
-              onClick={handleSaveEdit}
-              disabled={isSaving}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 flex items-center gap-2"
+              onClick={() => { setEditingPost(null); onRefresh(); }}
+              className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex items-center gap-2 shadow-lg shadow-indigo-500/20"
             >
-              <Save size={18} /> {isSaving ? 'Saving...' : 'Save Changes'}
+              Done Editing
             </button>
           </div>
         </div>
@@ -159,7 +188,7 @@ export const CommunityManager: React.FC<CommunityManagerProps> = ({ posts, onRef
         <div 
           key={post.id} 
           className={cn(
-            "bg-white dark:bg-gray-900 border rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center transition-all",
+            "bg-white dark:bg-gray-900 border rounded-xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center transition-all hover:shadow-md",
             post.status === 'pending' ? "border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10" : "border-gray-200 dark:border-gray-800"
           )}
         >
@@ -196,7 +225,7 @@ export const CommunityManager: React.FC<CommunityManagerProps> = ({ posts, onRef
             </div>
             <h4 className="font-bold text-gray-900 dark:text-white text-lg">{post.title}</h4>
             <div className="text-sm text-gray-500 flex items-center gap-2">
-              <span>{post.author_name}</span>
+              <span className="font-medium text-indigo-600 dark:text-indigo-400">{post.author_name}</span>
               <span>•</span>
               <span>{post.category}</span>
             </div>

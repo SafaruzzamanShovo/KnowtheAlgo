@@ -40,14 +40,23 @@ const DocumentationContent = () => {
   const currentModule = subject?.modules?.find(m => m.topics.some(t => t.id === topicId));
   const currentTopic = currentModule?.topics?.find(t => t.id === topicId);
 
-  // Find next topic for the "EndReader" component
+  // Find next 3 topics for the "EndReader" component
   const allTopics = subject?.modules.flatMap(m => m.topics) || [];
   const currentIndex = allTopics.findIndex(t => t.id === topicId);
-  const nextTopic = currentIndex !== -1 && currentIndex < allTopics.length - 1 ? {
-    id: allTopics[currentIndex + 1].id,
-    title: allTopics[currentIndex + 1].title,
-    subjectId: subject?.id || ''
-  } : undefined;
+  
+  const relatedTopics = [];
+  if (currentIndex !== -1) {
+    // Get next 2 topics
+    for (let i = 1; i <= 2; i++) {
+      if (currentIndex + i < allTopics.length) {
+        relatedTopics.push({
+          id: allTopics[currentIndex + i].id,
+          title: allTopics[currentIndex + i].title,
+          subjectId: subject?.id || ''
+        });
+      }
+    }
+  }
 
   // Auto-open module
   useEffect(() => {
@@ -264,12 +273,14 @@ const DocumentationContent = () => {
             <div className="space-y-2">
               {isRichContent ? (
                  <div className={cn(
-                   "prose dark:prose-invert max-w-none transition-all duration-300",
+                   "prose dark:prose-invert max-w-none transition-all duration-300 text-gray-900 dark:text-gray-100",
                    proseSize,
                    leadingClass,
                    // Force paragraph spacing if leading is loose
                    lineHeight === 'loose' && "[&_p]:mb-8",
-                   lineHeight === 'relaxed' && "[&_p]:mb-6"
+                   lineHeight === 'relaxed' && "[&_p]:mb-6",
+                   // Ensure dark mode text color is explicit for all elements
+                   "[&_*]:dark:text-gray-100 [&_strong]:dark:text-white [&_h1]:dark:text-white [&_h2]:dark:text-white [&_h3]:dark:text-white [&_h4]:dark:text-white [&_code]:dark:text-gray-200"
                  )}>
                     <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(currentTopic?.content as string) }} />
                  </div>
@@ -280,7 +291,7 @@ const DocumentationContent = () => {
               )}
             </div>
             
-            <EndReader nextTopic={nextTopic} />
+            <EndReader relatedTopics={relatedTopics} />
           </article>
         </div>
 

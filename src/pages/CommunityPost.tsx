@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CommunityPost as ICommunityPost } from '../types';
-import { ArrowLeft, User, Mail, MessageSquare, ThumbsUp, Share2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, MessageSquare, ThumbsUp, Share2, Twitter, Facebook, Linkedin, Link as LinkIcon, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlockEnhanced } from '../components/reading/CodeBlockEnhanced';
@@ -12,9 +12,9 @@ import { Paragraph } from '../components/reading/Paragraph';
 import { SmartImage } from '../components/reading/SmartImage';
 import { SectionDivider } from '../components/reading/SectionDivider';
 import { ReadingPreferencesProvider, useReadingPreferences } from '../context/ReadingPreferences';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DOMPurify from 'dompurify';
-import { cn } from '../lib/utils';
+import { cn, copyToClipboard } from '../lib/utils';
 
 export const CommunityPost = () => (
   <ReadingPreferencesProvider>
@@ -27,6 +27,10 @@ const CommunityPostContent = () => {
   const [post, setPost] = useState<ICommunityPost | null>(null);
   const [loading, setLoading] = useState(true);
   const { fontSize, lineHeight } = useReadingPreferences();
+  
+  // Sharing State
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (postId) fetchPost(postId);
@@ -51,10 +55,41 @@ const CommunityPostContent = () => {
     }
   };
 
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full"></div></div>;
   if (!post) return <div className="min-h-screen flex items-center justify-center text-xl">Post not found</div>;
 
   const isHtml = post.content.trim().startsWith('<');
+  const url = window.location.href;
+  const title = post.title;
+
+  const shareLinks = [
+    { 
+      icon: Twitter, 
+      label: 'Twitter', 
+      href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
+      color: 'text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+    },
+    { 
+      icon: Facebook, 
+      label: 'Facebook', 
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+      color: 'text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+    },
+    { 
+      icon: Linkedin, 
+      label: 'LinkedIn', 
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      color: 'text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+    }
+  ];
 
   // Explicit map to ensure Tailwind generates these classes
   const proseSizes = {
@@ -137,12 +172,14 @@ const CommunityPostContent = () => {
           >
             {isHtml ? (
                <div className={cn(
-                 "prose dark:prose-invert max-w-none transition-all duration-300",
+                 "prose dark:prose-invert max-w-none transition-all duration-300 text-gray-900 dark:text-gray-100",
                  proseSize,
                  leadingClass,
                  // Extra spacing for loose mode
                  lineHeight === 'loose' && "[&_p]:mb-8",
-                 lineHeight === 'relaxed' && "[&_p]:mb-6"
+                 lineHeight === 'relaxed' && "[&_p]:mb-6",
+                 // Ensure dark mode text color is explicit for all elements
+                 "[&_*]:dark:text-gray-100 [&_strong]:dark:text-white [&_h1]:dark:text-white [&_h2]:dark:text-white [&_h3]:dark:text-white [&_h4]:dark:text-white [&_code]:dark:text-gray-200"
                )}>
                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(post.content) }} />
                </div>
@@ -174,33 +211,72 @@ const CommunityPostContent = () => {
           </motion.div>
 
           <div className="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-10">
               <div className="flex flex-wrap gap-2">
-                {post.tags.map(tag => (
+                {post.tags?.map(tag => (
                   <span key={tag} className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium">
                     #{tag}
                   </span>
                 ))}
               </div>
-              <div className="flex gap-4">
-                 <button className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors">
+              
+              <div className="flex items-center gap-3">
+                 <button className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 dark:bg-gray-900 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
                    <ThumbsUp size={18} /> <span className="text-sm font-bold">Like</span>
                  </button>
-                 <button className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 transition-colors">
-                   <Share2 size={18} /> <span className="text-sm font-bold">Share</span>
-                 </button>
+                 
+                 <div className="relative">
+                   <button 
+                    onClick={() => setShowShareMenu(!showShareMenu)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-50 dark:bg-gray-900 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all"
+                   >
+                     <Share2 size={18} /> <span className="text-sm font-bold">Share</span>
+                   </button>
+
+                   <AnimatePresence>
+                    {showShareMenu && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 bottom-full mb-2 p-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 flex gap-1 min-w-[180px]"
+                      >
+                        {shareLinks.map((link) => (
+                          <a
+                            key={link.label}
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`p-2 rounded-lg transition-colors ${link.color}`}
+                            title={`Share on ${link.label}`}
+                          >
+                            <link.icon size={18} />
+                          </a>
+                        ))}
+                        <div className="w-px h-8 bg-gray-200 dark:bg-gray-800 mx-1"></div>
+                        <button
+                          onClick={handleCopyLink}
+                          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+                          title="Copy Link"
+                        >
+                          {copied ? <Check size={18} className="text-green-500" /> : <LinkIcon size={18} />}
+                        </button>
+                      </motion.div>
+                    )}
+                   </AnimatePresence>
+                 </div>
               </div>
             </div>
             
             {/* Mock Comments Section */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6">
-              <h3 className="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <MessageSquare size={18} /> Discussion
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-8 border border-gray-100 dark:border-gray-800">
+              <h3 className="font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2 text-lg">
+                <MessageSquare size={20} /> Discussion
               </h3>
               <div className="text-center py-8 text-gray-500">
-                <p>No comments yet. Be the first to start the conversation!</p>
-                <button className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700">
-                  Post a Comment
+                <p className="mb-4">No comments yet. Be the first to start the conversation!</p>
+                <button className="px-6 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl font-bold text-sm hover:shadow-md transition-all">
+                  Sign in to Comment
                 </button>
               </div>
             </div>

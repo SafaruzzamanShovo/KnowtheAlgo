@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Trash2, Edit2, ChevronRight, ChevronDown, 
   Save, X, Layers, FileText, FolderPlus,
-  Maximize2, Minimize2, ArrowUp, ArrowDown, ExternalLink
+  Maximize2, Minimize2, ArrowUp, ArrowDown, ExternalLink,
+  Users
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Subject, Module, Topic } from '../../types';
 import { DualModeEditor } from '../DualModeEditor';
 import { cn, slugify } from '../../lib/utils';
 import { Link } from 'react-router-dom';
+import { useAutoSave } from '../../hooks/useAutoSave';
 
 interface CurriculumManagerProps {
   subjects: Subject[];
@@ -24,7 +26,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const [topicContent, setTopicContent] = useState<string | any[]>('');
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   
-  const [isSaving, setIsSaving] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
 
   // New Item States
@@ -35,8 +36,54 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
   const [newItemDesc, setNewItemDesc] = useState('');
   const [newItemIcon, setNewItemIcon] = useState('Code2'); // Default icon
 
+  // Real-time Presence
+  const [activeUsers, setActiveUsers] = useState<number>(0);
+
   // Sort subjects by display_order
   const sortedSubjects = [...subjects].sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+
+  // --- Auto Save Logic ---
+  const saveTopicToDb = async (content: string | any[]) => {
+    if (!editingTopic || !supabase) return;
+
+    let readTime = '5 min';
+    if (typeof content === 'string') {
+       readTime = `${Math.max(1, Math.ceil(content.length / 500))} min`;
+    } else if (Array.isArray(content)) {
+       const text = content.map(b => b.value).join(' ');
+       readTime = `${Math.max(1, Math.ceil(text.length / 500))} min`;
+    }
+
+    await supabase
+      .from('topics')
+      .update({ 
+        content: content,
+        read_time: readTime
+      })
+      .eq('id', editingTopic.id);
+  };
+
+  const saveStatus = useAutoSave(topicContent, saveTopicToDb, 3000);
+
+  // --- Real-time Presence ---
+  useEffect(() => {
+    if (!supabase || !editingTopic) return;
+
+    const channel = supabase.channel(`topic:${editingTopic.id}`)
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        setActiveUsers(Object.keys(state).length);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user: 'admin', online_at: new Date().toISOString() });
+        }
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [editingTopic]);
 
   // --- Actions ---
 
@@ -113,7 +160,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
 
   const handleSaveSubject = async () => {
     if (!editingSubject || !supabase) return;
-    setIsSaving(true);
     
     const { error } = await supabase
       .from('subjects')
@@ -123,8 +169,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
         icon: editingSubject.icon
       })
       .eq('id', editingSubject.id);
-
-    setIsSaving(false);
 
     if (!error) {
       setEditingSubject(null);
@@ -194,38 +238,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
     setTopicContent(topic.content);
   };
 
-  const handleSaveTopic = async () => {
-    if (!editingTopic || !supabase) return;
-    setIsSaving(true);
-
-    let finalContent = topicContent;
-    let readTime = '5 min';
-
-    if (typeof finalContent === 'string') {
-       readTime = `${Math.max(1, Math.ceil(finalContent.length / 500))} min`;
-    } else if (Array.isArray(finalContent)) {
-       const text = finalContent.map(b => b.value).join(' ');
-       readTime = `${Math.max(1, Math.ceil(text.length / 500))} min`;
-    }
-
-    const { error } = await supabase
-      .from('topics')
-      .update({ 
-        content: finalContent,
-        read_time: readTime
-      })
-      .eq('id', editingTopic.id);
-
-    setIsSaving(false);
-    if (!error) {
-      setEditingTopic(null);
-      setIsFullScreen(false);
-      onRefresh();
-    } else {
-      alert(`Failed to save topic: ${error.message}`);
-    }
-  };
-
   // --- Render ---
 
   if (editingTopic) {
@@ -239,6 +251,13 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               Editing: {editingTopic.title}
             </h3>
+            <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
+              {activeUsers > 1 && (
+                <span className="flex items-center gap-1 text-indigo-600 font-bold animate-pulse">
+                  <Users size={12} /> {activeUsers} people viewing
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex gap-2">
             <button 
@@ -249,31 +268,27 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
               {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
             </button>
             <button 
-              onClick={() => { setEditingTopic(null); setIsFullScreen(false); }}
+              onClick={() => { setEditingTopic(null); setIsFullScreen(false); onRefresh(); }}
               className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 rounded-lg"
             >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSaveTopic}
-              disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 shadow-lg shadow-indigo-500/20"
-            >
-              <Save size={16} /> {isSaving ? 'Saving...' : 'Save Changes'}
+              Close
             </button>
           </div>
         </div>
 
         <div className="flex-1 overflow-hidden border border-gray-200 dark:border-gray-800 rounded-xl flex flex-col shadow-inner bg-gray-50 dark:bg-gray-950/50">
           <DualModeEditor 
+            key={editingTopic.id} // CRITICAL FIX: Force remount when switching topics
             content={topicContent} 
             onChange={setTopicContent} 
+            saveStatus={saveStatus}
           />
         </div>
       </div>
     );
   }
 
+  // ... (Rest of the component remains the same, just rendering the list)
   return (
     <div className="space-y-4">
       {/* Add Subject Button */}
@@ -353,7 +368,6 @@ export const CurriculumManager: React.FC<CurriculumManagerProps> = ({ subjects, 
                 </div>
                 <button 
                   onClick={handleSaveSubject}
-                  disabled={isSaving}
                   className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                   title="Save"
                 >

@@ -12,13 +12,15 @@ interface DualModeEditorProps {
   onChange: (content: string | any[]) => void;
   label?: string;
   minHeight?: string;
+  saveStatus?: 'saved' | 'saving' | 'unsaved' | 'error';
 }
 
 export const DualModeEditor: React.FC<DualModeEditorProps> = ({ 
   content, 
   onChange, 
   label,
-  minHeight = "300px"
+  minHeight = "300px",
+  saveStatus
 }) => {
   const [editorMode, setEditorMode] = useState<'rich' | 'markdown'>('rich');
   const [internalContent, setInternalContent] = useState('');
@@ -46,24 +48,8 @@ export const DualModeEditor: React.FC<DualModeEditorProps> = ({
     }
   };
 
-  const handleSwitchToMarkdown = () => {
-    if (confirm("Switch to Markdown? Complex layouts from the Visual Editor might be lost.")) {
-      // Basic HTML to Markdown strip (simplified)
-      // In a real app, use TurndownService or similar
-      setEditorMode('markdown');
-      // For now, we keep the HTML string in markdown mode or reset? 
-      // Let's just switch mode but warn user. 
-      // Actually, let's keep it simple: Dual Mode usually implies preference.
-      // If we switch to markdown, we expect markdown input.
-      // Let's just clear or try to parse.
-      // For safety in this demo, we'll just set mode.
-    }
-  };
-
   const handleChange = (newVal: string) => {
     setInternalContent(newVal);
-    // If markdown mode, we might want to parse to blocks if the parent expects blocks
-    // But for simplicity, we'll pass the string and let parent handle saving
     onChange(newVal);
   };
 
@@ -159,6 +145,7 @@ export const DualModeEditor: React.FC<DualModeEditorProps> = ({
           <RichTextEditor 
             content={internalContent} 
             onChange={handleChange} 
+            saveStatus={saveStatus}
           />
         ) : (
           <div className="flex-1 flex flex-col h-full">
