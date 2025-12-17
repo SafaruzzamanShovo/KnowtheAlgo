@@ -9,10 +9,9 @@ import { useSiteSettings } from '../hooks/useSiteSettings';
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
   const [scrolled, setScrolled] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
-  const { branding } = useSiteSettings();
+  const { branding, navigation } = useSiteSettings();
 
   React.useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -22,7 +21,6 @@ export const Header = () => {
     if (supabase) {
       supabase.auth.getSession().then(({ data: { session }, error }) => {
         if (error) {
-          supabase.auth.signOut();
           setIsAdmin(false);
         } else {
           setIsAdmin(!!session);
@@ -41,11 +39,8 @@ export const Header = () => {
     }
   }, []);
 
-  const navLinks = [
-    { name: 'Learning Paths', path: '/courses' },
-    { name: 'Community', path: '/community' },
-    { name: "Let's Collaborate", path: '/collaborate' },
-  ];
+  // Filter visible links
+  const visibleLinks = navigation.filter(link => link.visible);
 
   return (
     <header 
@@ -73,12 +68,12 @@ export const Header = () => {
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-2">
           <div className="flex items-center p-1 rounded-full bg-gray-100/50 dark:bg-gray-900/50 border border-gray-200/50 dark:border-gray-800/50 backdrop-blur-sm">
-            {navLinks.map((link) => {
+            {visibleLinks.map((link) => {
               const isActive = link.path === location.pathname;
               
               return (
                 <Link 
-                  key={link.name}
+                  key={link.label}
                   to={link.path}
                   className={cn(
                     "px-6 py-2 rounded-full text-sm font-medium transition-all duration-300 relative",
@@ -87,7 +82,7 @@ export const Header = () => {
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-gray-800/50"
                   )}
                 >
-                  {link.name}
+                  {link.label}
                 </Link>
               );
             })}
@@ -128,9 +123,9 @@ export const Header = () => {
             exit={{ opacity: 0, y: -20 }}
             className="absolute top-0 left-0 w-full h-screen bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl pt-24 px-6 md:hidden flex flex-col gap-6 z-40"
           >
-            {navLinks.map((link, idx) => (
+            {visibleLinks.map((link, idx) => (
               <motion.div
-                key={link.name}
+                key={link.label}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
@@ -140,7 +135,7 @@ export const Header = () => {
                   onClick={() => setIsMenuOpen(false)}
                   className="block text-3xl font-bold text-gray-900 dark:text-white py-4 border-b border-gray-100 dark:border-gray-800"
                 >
-                  {link.name}
+                  {link.label}
                 </Link>
               </motion.div>
             ))}

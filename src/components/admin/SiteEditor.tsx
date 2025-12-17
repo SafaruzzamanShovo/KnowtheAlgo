@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X, Github, Linkedin, BookOpen, Mail } from 'lucide-react';
+import { Save, Layout, User, MessageSquare, Briefcase, PenTool, Globe, Settings, Plus, Trash2, X, Github, Linkedin, BookOpen, Mail, Menu, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { 
   HomeSettings, AboutSettings, CommunityPageSettings, ContributePageSettings,
-  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem
+  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem, NavigationItem
 } from '../../types';
 import { DualModeEditor } from '../DualModeEditor';
 import { DynamicIcon } from '../DynamicIcon';
@@ -27,9 +27,10 @@ export const SiteEditor = ({
   const [communityData, setCommunityData] = useState<CommunityPageSettings>(initialCommunity);
   const [contributeData, setContributeData] = useState<ContributePageSettings>(initialContribute);
   
-  // New States
+  // Global & Extra States
   const [brandingData, setBrandingData] = useState<BrandingSettings>({ siteName: '', logoText: '' });
   const [footerData, setFooterData] = useState<FooterSettings>({ text: '', copyright: '' });
+  const [navData, setNavData] = useState<NavigationItem[]>([]);
   const [valuePropsData, setValuePropsData] = useState<ValuePropItem[]>([]);
   const [quickNavData, setQuickNavData] = useState<QuickNavItem[]>([]);
   
@@ -51,6 +52,9 @@ export const SiteEditor = ({
         
         const foot = data.find(s => s.key === 'site_footer');
         if (foot) setFooterData(foot.value);
+
+        const nav = data.find(s => s.key === 'site_navigation');
+        if (nav) setNavData(nav.value);
 
         const vProps = data.find(s => s.key === 'home_value_props');
         if (vProps) setValuePropsData(vProps.value);
@@ -96,6 +100,7 @@ export const SiteEditor = ({
       } else if (activeSection === 'global') {
         updates.push(supabase.from('site_settings').upsert({ key: 'site_branding', value: brandingData }));
         updates.push(supabase.from('site_settings').upsert({ key: 'site_footer', value: footerData }));
+        updates.push(supabase.from('site_settings').upsert({ key: 'site_navigation', value: navData }));
       }
       
       await Promise.all(updates);
@@ -144,7 +149,7 @@ export const SiteEditor = ({
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
         <TabButton id="about" label="Profile & CV" icon={User} />
-        <TabButton id="global" label="Global" icon={Settings} />
+        <TabButton id="global" label="Global & Nav" icon={Settings} />
         <TabButton id="home" label="Home" icon={Layout} />
         <TabButton id="community" label="Community" icon={Globe} />
         <TabButton id="contribute" label="Contribute" icon={PenTool} />
@@ -159,7 +164,7 @@ export const SiteEditor = ({
                 <User size={16} /> Academic Landing Page Configuration
               </h4>
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                This section controls the "Let's Collaborate" / About page. Keep the bio concise and academic.
+                This controls the "Let's Collaborate" page. It uses a premium, two-card layout (Profile + CV).
               </p>
             </div>
 
@@ -320,7 +325,6 @@ export const SiteEditor = ({
           </div>
         )}
 
-        {/* ... Rest of the component (Global, Home, Community, Contribute) ... */}
         {/* GLOBAL SETTINGS */}
         {activeSection === 'global' && (
           <div className="space-y-8">
@@ -347,6 +351,65 @@ export const SiteEditor = ({
                     placeholder="Algo"
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-8">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Menu size={20} /> Navigation Menu
+                </h3>
+                <button 
+                  onClick={() => setNavData([...navData, { label: 'New Link', path: '/', visible: true }])}
+                  className="text-sm text-indigo-600 hover:underline flex items-center gap-1"
+                >
+                  <Plus size={14} /> Add Link
+                </button>
+              </div>
+              <div className="space-y-3">
+                {navData.map((item, idx) => (
+                  <div key={idx} className="flex gap-3 items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <input 
+                      type="text" 
+                      value={item.label}
+                      onChange={e => {
+                        const newNav = [...navData];
+                        newNav[idx].label = e.target.value;
+                        setNavData(newNav);
+                      }}
+                      className="flex-1 px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm"
+                      placeholder="Label"
+                    />
+                    <input 
+                      type="text" 
+                      value={item.path}
+                      onChange={e => {
+                        const newNav = [...navData];
+                        newNav[idx].path = e.target.value;
+                        setNavData(newNav);
+                      }}
+                      className="flex-1 px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-sm font-mono"
+                      placeholder="/path"
+                    />
+                    <button 
+                      onClick={() => {
+                        const newNav = [...navData];
+                        newNav[idx].visible = !newNav[idx].visible;
+                        setNavData(newNav);
+                      }}
+                      className={`p-2 rounded-lg ${item.visible ? 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'text-gray-400 bg-gray-100 dark:bg-gray-800'}`}
+                      title="Toggle Visibility"
+                    >
+                      {item.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                    </button>
+                    <button 
+                      onClick={() => setNavData(navData.filter((_, i) => i !== idx))}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
 

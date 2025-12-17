@@ -59,6 +59,7 @@ export interface CommunityPost {
   tags: string[];
   status: 'pending' | 'approved' | 'rejected';
   likes: number;
+  display_order?: number;
 }
 
 export interface Category {
@@ -115,6 +116,12 @@ export interface BrandingSettings {
 export interface FooterSettings {
   text: string;
   copyright: string;
+}
+
+export interface NavigationItem {
+  label: string;
+  path: string;
+  visible: boolean;
 }
 
 export interface ValuePropItem {

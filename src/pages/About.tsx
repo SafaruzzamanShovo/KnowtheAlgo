@@ -120,16 +120,18 @@ export const About = () => {
               </div>
 
               {/* Tags */}
-              <div className="flex flex-wrap gap-2">
-                {aboutSettings.skills.slice(0, 5).map((interest) => (
-                  <span 
-                    key={interest} 
-                    className="px-3 py-1 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 text-[11px] font-bold uppercase tracking-wide rounded-lg border border-gray-100 dark:border-gray-800"
-                  >
-                    {interest}
-                  </span>
-                ))}
-              </div>
+              {aboutSettings.skills && aboutSettings.skills.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {aboutSettings.skills.slice(0, 5).map((interest) => (
+                    <span 
+                      key={interest} 
+                      className="px-3 py-1 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 text-[11px] font-bold uppercase tracking-wide rounded-lg border border-gray-100 dark:border-gray-800"
+                    >
+                      {interest}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

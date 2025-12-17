@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   HomeSettings, AboutSettings, Category, CommunityPageSettings, ContributePageSettings,
-  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem
+  BrandingSettings, FooterSettings, ValuePropItem, QuickNavItem, NavigationItem
 } from '../types';
 
 const DEFAULT_HOME: HomeSettings = {
@@ -21,9 +21,7 @@ const DEFAULT_ABOUT: AboutSettings = {
   bio: "I bridge the gap between theoretical computer science and practical software engineering. My work focuses on distributed systems, AI infrastructure, and making complex algorithms accessible to everyone.",
   image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
   skills: [
-    "React", "TypeScript", "Node.js", "Python", "Go", "Rust", 
-    "System Design", "Distributed Systems", "Kubernetes", "Docker", "AWS",
-    "TensorFlow", "PyTorch", "GraphQL", "PostgreSQL", "Redis"
+    "Machine Learning", "Distributed Systems", "Computer Vision", "Deep Learning", "System Design"
   ],
   resume_link: "#",
   socials: {
@@ -54,6 +52,12 @@ const DEFAULT_FOOTER: FooterSettings = {
   copyright: "All rights reserved."
 };
 
+const DEFAULT_NAV: NavigationItem[] = [
+  { label: 'Learning Paths', path: '/courses', visible: true },
+  { label: 'Community', path: '/community', visible: true },
+  { label: "Let's Collaborate", path: '/collaborate', visible: true },
+];
+
 const DEFAULT_VALUE_PROPS: ValuePropItem[] = [
   { icon: "Layers", title: "Structured Learning", desc: "Curated paths from basics to advanced engineering concepts." },
   { icon: "BookOpen", title: "Research-Driven", desc: "Content backed by academic rigor and industry standards." },
@@ -73,9 +77,12 @@ export const useSiteSettings = () => {
   const [communitySettings, setCommunitySettings] = useState<CommunityPageSettings>(DEFAULT_COMMUNITY);
   const [contributeSettings, setContributeSettings] = useState<ContributePageSettings>(DEFAULT_CONTRIBUTE);
   
-  // New Global Settings
+  // Global Settings
   const [branding, setBranding] = useState<BrandingSettings>(DEFAULT_BRANDING);
   const [footer, setFooter] = useState<FooterSettings>(DEFAULT_FOOTER);
+  const [navigation, setNavigation] = useState<NavigationItem[]>(DEFAULT_NAV);
+  
+  // Home Components
   const [valueProps, setValueProps] = useState<ValuePropItem[]>(DEFAULT_VALUE_PROPS);
   const [quickNav, setQuickNav] = useState<QuickNavItem[]>(DEFAULT_QUICK_NAV);
 
@@ -102,13 +109,17 @@ export const useSiteSettings = () => {
         const contribute = settingsData.find(s => s.key === 'contribute_page');
         if (contribute) setContributeSettings({ ...DEFAULT_CONTRIBUTE, ...contribute.value });
 
-        // New Settings
+        // Global
         const brand = settingsData.find(s => s.key === 'site_branding');
         if (brand) setBranding({ ...DEFAULT_BRANDING, ...brand.value });
 
         const foot = settingsData.find(s => s.key === 'site_footer');
         if (foot) setFooter({ ...DEFAULT_FOOTER, ...foot.value });
 
+        const nav = settingsData.find(s => s.key === 'site_navigation');
+        if (nav) setNavigation(nav.value);
+
+        // Components
         const vProps = settingsData.find(s => s.key === 'home_value_props');
         if (vProps) setValueProps(vProps.value);
 
@@ -138,6 +149,7 @@ export const useSiteSettings = () => {
     contributeSettings,
     branding,
     footer,
+    navigation,
     valueProps,
     quickNav,
     categories, 
