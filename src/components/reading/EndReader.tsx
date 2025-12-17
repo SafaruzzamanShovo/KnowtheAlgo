@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, ArrowRight, Share2, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { copyToClipboard } from '../../lib/utils';
 
 interface EndReaderProps {
   nextTopic?: {
@@ -21,21 +22,21 @@ export const EndReader: React.FC<EndReaderProps> = ({ nextTopic }) => {
       url: window.location.href,
     };
 
+    // Try native share first (mobile)
     if (navigator.share) {
       try {
         await navigator.share(shareData);
+        return;
       } catch (err) {
-        console.error('Error sharing:', err);
+        console.log('Share dismissed or failed, falling back to copy');
       }
-    } else {
-      // Fallback to clipboard
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy:', err);
-      }
+    }
+
+    // Fallback to clipboard copy
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 

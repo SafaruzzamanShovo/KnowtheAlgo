@@ -35,6 +35,25 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
+const FONT_FAMILIES = [
+  { name: 'Inter (Default)', value: 'Inter, sans-serif' },
+  { name: 'Arial', value: 'Arial, sans-serif' },
+  { name: 'Arial Black', value: 'Arial Black, sans-serif' },
+  { name: 'Verdana', value: 'Verdana, sans-serif' },
+  { name: 'Tahoma', value: 'Tahoma, sans-serif' },
+  { name: 'Trebuchet MS', value: 'Trebuchet MS, sans-serif' },
+  { name: 'Impact', value: 'Impact, sans-serif' },
+  { name: 'Times New Roman', value: 'Times New Roman, serif' },
+  { name: 'Georgia', value: 'Georgia, serif' },
+  { name: 'Garamond', value: 'Garamond, serif' },
+  { name: 'Courier New', value: 'Courier New, monospace' },
+  { name: 'Brush Script MT', value: 'Brush Script MT, cursive' },
+  { name: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+];
+
+// Generate font sizes from 8 to 50
+const FONT_SIZES = Array.from({ length: 43 }, (_, i) => i + 8);
+
 const MenuButton = ({ 
   onClick, 
   isActive = false, 
@@ -150,14 +169,12 @@ const MenuBar = ({ editor }: { editor: any }) => {
         <select
           onChange={(e) => editor.chain().focus().setFontFamily(e.target.value).run()}
           value={editor.getAttributes('textStyle').fontFamily || ''}
-          className="h-8 pl-2 pr-6 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none appearance-none cursor-pointer min-w-[80px]"
+          className="h-8 pl-2 pr-6 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none appearance-none cursor-pointer min-w-[100px] max-w-[120px]"
         >
-          <option value="">Default Font</option>
-          <option value="Inter, sans-serif">Inter</option>
-          <option value="Comic Sans MS, Comic Sans">Comic Sans</option>
-          <option value="serif">Serif</option>
-          <option value="monospace">Monospace</option>
-          <option value="cursive">Cursive</option>
+          <option value="">Font Family</option>
+          {FONT_FAMILIES.map((font) => (
+            <option key={font.name} value={font.value}>{font.name}</option>
+          ))}
         </select>
         <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
       </div>
@@ -170,13 +187,9 @@ const MenuBar = ({ editor }: { editor: any }) => {
           className="h-8 pl-2 pr-6 text-xs bg-transparent border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none appearance-none cursor-pointer min-w-[60px]"
         >
           <option value="">Size</option>
-          <option value="12px">12px</option>
-          <option value="14px">14px</option>
-          <option value="16px">16px</option>
-          <option value="18px">18px</option>
-          <option value="20px">20px</option>
-          <option value="24px">24px</option>
-          <option value="30px">30px</option>
+          {FONT_SIZES.map((size) => (
+            <option key={size} value={`${size}px`}>{size}px</option>
+          ))}
         </select>
         <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500" />
       </div>

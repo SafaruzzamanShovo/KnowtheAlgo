@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CommunityPost } from '../types';
 import { useSiteSettings } from '../hooks/useSiteSettings';
-import { Search, User, Calendar, ArrowRight, MessageSquare, Layers, ChevronLeft, Sparkles, Hash, TrendingUp, Clock } from 'lucide-react';
+import { Search, ArrowRight, MessageSquare, Layers, ChevronLeft, Sparkles, Hash, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Background } from '../components/Background';
 
 export const Community = () => {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -28,7 +29,7 @@ export const Community = () => {
           .select('*')
           .eq('status', 'approved')
           .eq('category', category)
-          .order('display_order', { ascending: true }) // Respect custom order
+          .order('display_order', { ascending: true })
           .order('created_at', { ascending: false });
         
         if (error) throw error;
@@ -46,21 +47,20 @@ export const Community = () => {
     post.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- View 1: Category Hub (Minimal Redesign) ---
+  // --- View 1: Category Hub ---
   if (!selectedCategory) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-32 pb-20 relative overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
-
-        <div className="container mx-auto px-4 max-w-5xl relative z-10">
+      <div className="min-h-screen relative overflow-hidden">
+        <Background />
+        
+        <div className="container mx-auto px-4 max-w-5xl relative z-10 pt-32 pb-20">
           <div className="text-center mb-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-6 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border border-gray-200 dark:border-gray-800 text-indigo-600 dark:text-indigo-400 text-xs font-bold mb-6 shadow-sm">
                 <Sparkles size={12} /> 
                 <span className="uppercase tracking-wide">Knowledge Hub</span>
               </div>
@@ -91,7 +91,7 @@ export const Community = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 onClick={() => setSelectedCategory(cat.title)}
-                className="group relative bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 text-left transition-all hover:shadow-lg hover:-translate-y-0.5 flex flex-col h-full"
+                className="group relative bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-xl p-5 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 text-left transition-all hover:shadow-lg hover:-translate-y-0.5 flex flex-col h-full"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${cat.color} flex items-center justify-center text-white shadow-sm`}>
@@ -119,8 +119,10 @@ export const Community = () => {
 
   // --- View 2: Post Feed ---
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pt-28 pb-20">
-      <div className="container mx-auto px-4 max-w-6xl">
+    <div className="min-h-screen relative overflow-hidden">
+      <Background />
+
+      <div className="container mx-auto px-4 max-w-6xl relative z-10 pt-28 pb-20">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
@@ -148,7 +150,7 @@ export const Community = () => {
                 placeholder="Search posts..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-64 transition-all"
+                className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-full md:w-64 transition-all"
               />
             </div>
             <Link 
@@ -164,7 +166,7 @@ export const Community = () => {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-64 bg-white dark:bg-gray-900 rounded-3xl animate-pulse border border-gray-200 dark:border-gray-800"></div>
+              <div key={i} className="h-64 bg-white/50 dark:bg-gray-900/50 rounded-3xl animate-pulse border border-gray-200 dark:border-gray-800"></div>
             ))}
           </div>
         ) : filteredPosts.length > 0 ? (
@@ -179,7 +181,7 @@ export const Community = () => {
                   transition={{ delay: index * 0.05 }}
                 >
                   <Link to={`/community/${post.id}`} className="block h-full group">
-                    <article className="h-full bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col relative overflow-hidden">
+                    <article className="h-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-3xl p-6 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/50 transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col relative overflow-hidden">
                       
                       {/* Decorative Top Gradient */}
                       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -189,7 +191,7 @@ export const Community = () => {
                           <span className="w-2 h-2 rounded-full bg-green-500"></span>
                           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Discussion</span>
                         </div>
-                        <span className="text-xs text-gray-400 flex items-center gap-1 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-md">
+                        <span className="text-xs text-gray-400 flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
                           <Clock size={12} /> {new Date(post.created_at).toLocaleDateString()}
                         </span>
                       </div>
@@ -228,7 +230,7 @@ export const Community = () => {
                           </div>
                         </div>
                         
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                           <ArrowRight size={14} />
                         </div>
                       </div>
@@ -239,7 +241,7 @@ export const Community = () => {
             </AnimatePresence>
           </div>
         ) : (
-          <div className="text-center py-24 bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 border-dashed">
+          <div className="text-center py-24 bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-3xl border border-gray-200 dark:border-gray-800 border-dashed">
             <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
               <MessageSquare size={24} />
             </div>

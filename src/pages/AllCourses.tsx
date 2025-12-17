@@ -4,13 +4,16 @@ import { motion } from 'framer-motion';
 import { ChevronRight, BookOpen, ArrowLeft } from 'lucide-react';
 import { useCurriculum } from '../hooks/useCurriculum';
 import { CourseIcon } from '../components/home/LearningPaths';
+import { Background } from '../components/Background';
 
 export const AllCourses = () => {
   const { subjects, loading } = useCurriculum();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 pt-24 pb-20">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen relative overflow-hidden">
+      <Background />
+      
+      <div className="container mx-auto px-4 relative z-10 pt-24 pb-20">
         
         <div className="max-w-6xl mx-auto mb-12">
           <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-indigo-600 mb-8 transition-colors group">
@@ -52,7 +55,8 @@ export const AllCourses = () => {
                   to={`/learn/${subject.id}`}
                   className="group block h-full relative"
                 >
-                  <div className="h-full bg-gray-50 dark:bg-gray-900 rounded-2xl p-5 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative overflow-hidden">
+                  {/* Card Background - slightly opaque to stand out from page bg */}
+                  <div className="h-full bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm rounded-2xl p-5 border border-gray-200 dark:border-gray-800 hover:border-indigo-500/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col relative overflow-hidden">
                     
                     {/* Hover Gradient */}
                     <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>

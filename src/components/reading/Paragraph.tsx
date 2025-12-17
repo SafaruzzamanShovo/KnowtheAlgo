@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Copy, Check } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { cn, copyToClipboard } from '../../lib/utils';
 import { useReadingPreferences } from '../../context/ReadingPreferences';
 
 interface ParagraphProps {
@@ -30,20 +30,24 @@ export const Paragraph: React.FC<ParagraphProps> = ({ children, className, id })
     'loose': 'leading-loose'
   }[lineHeight];
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     if (typeof children === 'string') {
-      navigator.clipboard.writeText(children);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const success = await copyToClipboard(children);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 
-  const handleLink = () => {
+  const handleLink = async () => {
     if (id) {
       const url = `${window.location.origin}${window.location.pathname}#${id}`;
-      navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const success = await copyToClipboard(url);
+      if (success) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Check, Copy, Terminal, Maximize2, Minimize2, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { copyToClipboard } from '../../lib/utils';
 
 interface CodeBlockProps {
   code: string;
@@ -13,10 +14,12 @@ export const CodeBlockEnhanced: React.FC<CodeBlockProps> = ({ code, language = '
   const [expanded, setExpanded] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    const success = await copyToClipboard(code);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const lines = code.split('\n').length;
