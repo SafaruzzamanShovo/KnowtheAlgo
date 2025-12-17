@@ -13,16 +13,8 @@ export default defineConfig({
         manualChunks: {
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'ui-libs': ['framer-motion', 'lucide-react'],
-          // Tiptap dependencies grouped together
-          'editor-libs': [
-            '@tiptap/react', 
-            '@tiptap/starter-kit', 
-            '@tiptap/extension-image', 
-            '@tiptap/extension-link',
-            '@tiptap/extension-youtube',
-            '@tiptap/extension-table',
-            '@tiptap/extension-code-block-lowlight'
-          ],
+          // Simplified editor chunking to avoid potential circular dependency issues during rollup
+          'editor': ['@tiptap/react', '@tiptap/starter-kit']
         },
       },
     },
