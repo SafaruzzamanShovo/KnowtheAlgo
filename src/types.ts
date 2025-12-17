@@ -89,6 +89,10 @@ export interface AboutSettings {
   image: string;
   skills: string[];
   resume_link?: string;
+  // New fields for automating the Collaborate/Landing page right card
+  portfolio_card_title?: string;
+  portfolio_card_desc?: string;
+  portfolio_card_cta?: string;
   socials?: {
     github?: string;
     linkedin?: string;

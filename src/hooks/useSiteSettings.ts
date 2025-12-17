@@ -24,6 +24,9 @@ const DEFAULT_ABOUT: AboutSettings = {
     "Machine Learning", "Distributed Systems", "Computer Vision", "Deep Learning", "System Design"
   ],
   resume_link: "#",
+  portfolio_card_title: "View Portfolio",
+  portfolio_card_desc: "Explore full case studies, research papers, and live deployments.",
+  portfolio_card_cta: "Launch",
   socials: {
     github: "https://github.com",
     linkedin: "https://linkedin.com",

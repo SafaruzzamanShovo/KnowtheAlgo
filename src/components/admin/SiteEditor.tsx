@@ -148,7 +148,7 @@ export const SiteEditor = ({
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div className="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
-        <TabButton id="about" label="Profile & CV" icon={User} />
+        <TabButton id="about" label="Collaborate Page" icon={User} />
         <TabButton id="global" label="Global & Nav" icon={Settings} />
         <TabButton id="home" label="Home" icon={Layout} />
         <TabButton id="community" label="Community" icon={Globe} />
@@ -161,10 +161,10 @@ export const SiteEditor = ({
           <div className="space-y-8">
             <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-6">
               <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
-                <User size={16} /> Academic Landing Page Configuration
+                <User size={16} /> Collaborate Page Configuration
               </h4>
               <p className="text-xs text-blue-600 dark:text-blue-400">
-                This controls the "Let's Collaborate" page. It uses a premium, two-card layout (Profile + CV).
+                This controls the "Let's Collaborate" page. It uses a premium, two-card layout (Left: Profile, Right: Portfolio Gateway).
               </p>
             </div>
 
@@ -215,16 +215,54 @@ export const SiteEditor = ({
                   {aboutData.image && <img src={aboutData.image} alt="Preview" className="w-10 h-10 rounded-lg object-cover border border-gray-200" />}
                 </div>
               </div>
-               <div>
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">CV Link (Right Card)</label>
-                <input
-                  type="text"
-                  value={aboutData.resume_link || ''}
-                  onChange={e => setAboutData({...aboutData, resume_link: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800"
-                  placeholder="https://username.github.io/cv"
-                />
-                <p className="text-[10px] text-gray-500 mt-1">Direct link to your GitHub Pages CV or PDF.</p>
+            </div>
+
+            {/* Right Card Configuration */}
+            <div className="border-t border-gray-200 dark:border-gray-800 pt-6">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <Globe size={16} /> Right Card (Portfolio Gateway)
+              </h3>
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Card Title</label>
+                    <input
+                      type="text"
+                      value={aboutData.portfolio_card_title || 'View Portfolio'}
+                      onChange={e => setAboutData({...aboutData, portfolio_card_title: e.target.value})}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">Button Text</label>
+                    <input
+                      type="text"
+                      value={aboutData.portfolio_card_cta || 'Launch'}
+                      onChange={e => setAboutData({...aboutData, portfolio_card_cta: e.target.value})}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={aboutData.portfolio_card_desc || 'Explore full case studies, research papers, and live deployments.'}
+                    onChange={e => setAboutData({...aboutData, portfolio_card_desc: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 mb-1">Destination URL</label>
+                  <input
+                    type="text"
+                    value={aboutData.resume_link || ''}
+                    onChange={e => setAboutData({...aboutData, resume_link: e.target.value})}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    placeholder="https://your-portfolio.com or https://github.com/..."
+                  />
+                  <p className="text-[10px] text-gray-400 mt-1">This is where the user will be redirected when clicking the card.</p>
+                </div>
               </div>
             </div>
 
